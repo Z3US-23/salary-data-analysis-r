@@ -1,0 +1,544 @@
+---
+title: "Salary Data Analysis Dashboard (2020-2023)"
+author: "Ahmad Ammar"
+date: "2024-12-22"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+    theme: cosmo
+    social: menu
+    source_code: embed
+runtime: shiny
+---
+
+<style>
+.sidebar {
+  background-color: #f8f9fa;
+  padding: 20px;
+  border-right: 3px solid #007bff;
+}
+
+.chart-title {
+  color: #007bff;
+  font-weight: bold;
+  border-bottom: 2px solid #007bff;
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+}
+
+.value-box {
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+h1, h2, h3, h4 {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.sidebar h3 {
+  color: #495057;
+  line-height: 1.6;
+}
+
+hr {
+  border: 0;
+  height: 2px;
+  background: linear-gradient(to right, #007bff, #6c757d);
+  margin: 20px 0;
+}
+</style>
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(tidyverse)
+library(plotly)
+library(DT)
+library(shiny)
+library(readxl)
+library(dplyr)
+library(janitor)
+library(tidyr)
+library(scales)
+```
+
+```{r data-loading, include=FALSE}
+# Set file paths
+data_path <- "C:/Users/HP/Desktop/R FINAL PROJECT/data/"
+
+# Load data from Excel files
+Data_2020_xlsx <- read_excel(paste0(data_path, "Data_2020.xlsx"))
+Data_2021_xlsx <- read_excel(paste0(data_path, "Data_2021.xlsx"))
+Data_2022_xlsx <- read_excel(paste0(data_path, "Data_2022.xlsx"))
+Data_2023_xlsx <- read_excel(paste0(data_path, "Data_2023.xlsx"))
+
+# Combine all years
+concatenated_data <- rbind(Data_2020_xlsx, Data_2021_xlsx, 
+                           Data_2022_xlsx, Data_2023_xlsx)
+
+# Clean data
+combined_data_clean <- na.omit(concatenated_data)
+
+# Transform salary to PKR (1 USD = 285 PKR)
+combined_data_clean <- combined_data_clean %>%
+  mutate(salary_in_pkr = salary_in_usd * 285)
+
+# Create summary table based on available columns
+if("remote_ratio" %in% colnames(combined_data_clean)) {
+  table <- combined_data_clean %>% 
+    group_by(job_title) %>% 
+    summarize(
+      `Mean Salary (USD)` = round(mean(salary_in_usd, na.rm = TRUE), 2), 
+      `SD Salary (USD)` = round(sd(salary_in_usd, na.rm = TRUE), 2),
+      `Mean Remote Ratio` = round(mean(remote_ratio, na.rm = TRUE), 2),
+      `SD Remote Ratio` = round(sd(remote_ratio, na.rm = TRUE), 2),
+      `Employee Count` = n()
+    ) %>%
+    arrange(desc(`Mean Salary (USD)`))
+} else {
+  table <- combined_data_clean %>% 
+    group_by(job_title) %>% 
+    summarize(
+      `Mean Salary (USD)` = round(mean(salary_in_usd, na.rm = TRUE), 2), 
+      `SD Salary (USD)` = round(sd(salary_in_usd, na.rm = TRUE), 2),
+      `Employee Count` = n()
+    ) %>%
+    arrange(desc(`Mean Salary (USD)`))
+}
+```
+
+Overview {data-icon="fa-dashboard"}
+=====================================
+
+Column {data-width=250}
+-----------------------------------------------------------------------
+
+### Total Records {.value-box}
+
+```{r}
+renderValueBox({
+  valueBox(
+    value = formatC(nrow(combined_data_clean), format="d", big.mark=","),
+    caption = "Total Salary Records",
+    icon = "fa-database",
+    color = "primary"
+  )
+})
+```
+
+### Average Salary (USD) {.value-box}
+
+```{r}
+renderValueBox({
+  avg_salary <- mean(combined_data_clean$salary_in_usd, na.rm = TRUE)
+  valueBox(
+    value = paste0("$", formatC(round(avg_salary), format="d", big.mark=",")),
+    caption = "Average Salary (USD)",
+    icon = "fa-dollar-sign",
+    color = "success"
+  )
+})
+```
+
+### Average Salary (PKR) {.value-box}
+
+```{r}
+renderValueBox({
+  avg_salary_pkr <- mean(combined_data_clean$salary_in_pkr, na.rm = TRUE)
+  valueBox(
+    value = paste0("₨ ", formatC(round(avg_salary_pkr), format="d", big.mark=",")),
+    caption = "Average Salary (PKR)",
+    icon = "fa-money-bill-wave",
+    color = "warning"
+  )
+})
+```
+
+### Unique Job Titles {.value-box}
+
+```{r}
+renderValueBox({
+  valueBox(
+    value = length(unique(combined_data_clean$job_title)),
+    caption = "Different Job Roles",
+    icon = "fa-briefcase",
+    color = "info"
+  )
+})
+```
+
+Column {data-width=750}
+-----------------------------------------------------------------------
+
+### 📊 Salary Distribution Overview
+
+```{r}
+renderPlotly({
+  p <- ggplot(combined_data_clean, aes(x = salary_in_usd)) +
+    geom_histogram(bins = 50, fill = "#007bff", color = "white", alpha = 0.8) +
+    labs(title = "Distribution of Salaries (USD)",
+         x = "Salary (USD)",
+         y = "Frequency") +
+    theme_minimal(base_size = 14) +
+    scale_x_continuous(labels = comma) +
+    theme(plot.title = element_text(hjust = 0.5, face = "bold", color = "#007bff"))
+  
+  ggplotly(p) %>%
+    layout(hovermode = "x unified")
+})
+```
+
+---
+
+**📌 Dataset Summary**
+
+This dashboard analyzes salary data from **2020 to 2023**, covering multiple job roles across various company sizes and employee locations. The exchange rate used is **1 USD = 285 PKR**.
+
+---
+
+Salary Analysis by Job {data-icon="fa-briefcase"}
+=========================================
+
+Column {.sidebar data-width=250}
+-----------------------------------------
+
+<div class="chart-title">
+### 📋 Job Salary Analysis
+</div>
+
+```{r}
+HTML("<hr>")
+h3(strong("Welcome!"))
+h4("This is the Final Project Dashboard")
+HTML("<hr>")
+h3(strong(em("The table displays comprehensive salary statistics for various job roles:")))
+h4("✓ Average Salary in USD")
+h4("✓ Standard Deviation")
+if("remote_ratio" %in% colnames(combined_data_clean)) {
+  h4("✓ Remote Work Ratio")
+}
+h4("✓ Employee Count")
+HTML("<hr>")
+h4(em("💡 Use the search bar to find specific jobs"))
+h4(em("📊 Click column headers to sort"))
+h4(em("📥 Export data using the buttons above the table"))
+```
+
+Column {data-width=750}
+-----------------------------------------
+
+### 📊 Salary Statistics by Job Title
+
+```{r}
+renderDT({
+  datatable(table, 
+            extensions = 'Buttons',
+            options = list(
+              dom = 'Bfrtip',
+              buttons = list(
+                list(extend = 'copy', className = 'btn-primary'),
+                list(extend = 'csv', className = 'btn-success'),
+                list(extend = 'excel', className = 'btn-info', title = 'Salary_Analysis'),
+                list(extend = 'pdf', className = 'btn-danger', title = 'Salary_Analysis'),
+                list(extend = 'print', className = 'btn-warning')
+              ),
+              pageLength = 15,
+              lengthMenu = c(10, 15, 25, 50, 100),
+              scrollX = TRUE,
+              scrollY = "500px",
+              searchHighlight = TRUE,
+              initComplete = JS(
+                "function(settings, json) {",
+                "$(this.api().table().header()).css({'background-color': '#007bff', 'color': '#fff'});",
+                "}"
+              )
+            ),
+            rownames = FALSE,
+            class = 'cell-border stripe hover') %>%
+    formatCurrency(c('Mean Salary (USD)', 'SD Salary (USD)'), '$', digits = 0) %>%
+    formatStyle(
+      'Mean Salary (USD)',
+      background = styleColorBar(range(table$`Mean Salary (USD)`), '#e3f2fd'),
+      backgroundSize = '100% 90%',
+      backgroundRepeat = 'no-repeat',
+      backgroundPosition = 'center'
+    )
+})
+```
+
+Company Size Analysis {data-icon="fa-building"}
+=========================================
+
+Column {.sidebar data-width=250}
+-----------------------------------------
+
+<div class="chart-title">
+### 🏢 Company Size Impact
+</div>
+
+```{r}
+HTML("<hr>")
+h3(strong(em("Company Size Classification:")))
+h4("🔵 L = Large Companies")
+h4("🟢 M = Medium Companies")
+h4("🟡 S = Small Companies")
+HTML("<hr>")
+h3(strong(em("The bar plot compares average salaries across different company sizes.")))
+h4("📈 Hover over bars for detailed information")
+h4("🔍 Interactive zoom and pan available")
+HTML("<hr>")
+h4(em("Key Insight: Company size often correlates with salary levels"))
+```
+
+Column {data-width=750}
+-----------------------------------------
+
+### 📊 Average Salary by Company Size (USD)
+
+```{r}
+renderPlotly({
+  bar_plot_company_size <- combined_data_clean %>%
+    group_by(company_size) %>%
+    summarize(
+      mean_salary = mean(salary_in_usd, na.rm = TRUE),
+      count = n(),
+      sd_salary = sd(salary_in_usd, na.rm = TRUE)
+    ) %>%
+    arrange(desc(mean_salary))
+  
+  colors <- c("L" = "#0066cc", "M" = "#00cc66", "S" = "#ffcc00")
+  
+  plot_ly(bar_plot_company_size, 
+          x = ~company_size, 
+          y = ~mean_salary,
+          type = 'bar',
+          color = ~company_size,
+          colors = colors,
+          text = ~paste0("Size: ", company_size, 
+                        "<br>Avg Salary: $", formatC(round(mean_salary), format="d", big.mark=","),
+                        "<br>Employees: ", count,
+                        "<br>Std Dev: $", formatC(round(sd_salary), format="d", big.mark=",")),
+          hoverinfo = 'text') %>%
+    layout(
+      title = list(
+        text = "<b>Company Size vs. Average Salary</b>",
+        font = list(size = 18, color = "#007bff")
+      ),
+      xaxis = list(
+        title = "<b>Company Size</b>",
+        titlefont = list(size = 14),
+        tickfont = list(size = 12)
+      ),
+      yaxis = list(
+        title = "<b>Average Salary (USD)</b>",
+        titlefont = list(size = 14),
+        tickfont = list(size = 12),
+        tickformat = "$,.0f"
+      ),
+      showlegend = FALSE,
+      plot_bgcolor = "#f8f9fa",
+      paper_bgcolor = "#ffffff"
+    )
+})
+```
+
+---
+
+### 💰 Salary Comparison: USD vs PKR
+
+```{r}
+renderPlotly({
+  company_comparison <- combined_data_clean %>%
+    group_by(company_size) %>%
+    summarize(
+      `USD` = mean(salary_in_usd, na.rm = TRUE),
+      `PKR` = mean(salary_in_pkr, na.rm = TRUE) / 1000  # In thousands
+    ) %>%
+    pivot_longer(cols = c(USD, PKR), names_to = "Currency", values_to = "Salary")
+  
+  plot_ly(company_comparison,
+          x = ~company_size,
+          y = ~Salary,
+          color = ~Currency,
+          colors = c("#007bff", "#28a745"),
+          type = 'bar',
+          text = ~ifelse(Currency == "USD",
+                        paste0("$", formatC(round(Salary), format="d", big.mark=",")),
+                        paste0("₨ ", formatC(round(Salary*1000), format="d", big.mark=","))),
+          textposition = 'outside',
+          hovertemplate = paste0("<b>%{x}</b><br>",
+                                "%{text}<br>",
+                                "<extra></extra>")) %>%
+    layout(
+      title = list(text = "<b>Salary Comparison Across Company Sizes</b>"),
+      xaxis = list(title = "<b>Company Size</b>"),
+      yaxis = list(title = "<b>Average Salary</b>"),
+      barmode = 'group',
+      legend = list(title = list(text = "<b>Currency</b>"))
+    )
+})
+```
+
+Employee Residence {data-icon="fa-globe"}
+=========================================
+
+Column {.sidebar data-width=250}
+-----------------------------------------
+
+<div class="chart-title">
+### 🌍 Global Salary Distribution
+</div>
+
+```{r}
+HTML("<hr>")
+h3(strong("Geographic Analysis"))
+HTML("<hr>")
+h3(strong(em("This visualization shows average salaries based on employee residence countries.")))
+h4("🌎 Each bar represents a country")
+h4("📊 Height indicates average salary")
+h4("🔢 Hover for exact figures")
+HTML("<hr>")
+h4(em("💡 Top countries by salary are shown"))
+h4(em("📍 Location impacts compensation significantly"))
+HTML("<hr>")
+
+selectInput("top_n_residence", 
+            "Number of countries to display:",
+            choices = c(10, 15, 20, 25, 30),
+            selected = 15)
+```
+
+Column {data-width=750}
+-----------------------------------------
+
+### 🗺️ Average Salary by Employee Residence (Top Countries)
+
+```{r}
+renderPlotly({
+  n_countries <- as.numeric(input$top_n_residence)
+  
+  bar_plot_residence <- combined_data_clean %>%
+    group_by(employee_residence) %>%
+    summarise(
+      mean_salary = mean(salary_in_usd, na.rm = TRUE),
+      count = n(),
+      sd_salary = sd(salary_in_usd, na.rm = TRUE)
+    ) %>%
+    arrange(desc(mean_salary)) %>%
+    head(n_countries)
+  
+  plot_ly(bar_plot_residence, 
+          x = ~reorder(employee_residence, mean_salary), 
+          y = ~mean_salary,
+          type = 'bar',
+          marker = list(
+            color = ~mean_salary,
+            colorscale = 'Viridis',
+            showscale = TRUE,
+            colorbar = list(title = "Salary (USD)")
+          ),
+          text = ~paste0("Country: ", employee_residence,
+                        "<br>Avg Salary: $", formatC(round(mean_salary), format="d", big.mark=","),
+                        "<br>Employees: ", count,
+                        "<br>Std Dev: $", formatC(round(sd_salary), format="d", big.mark=",")),
+          hoverinfo = 'text') %>%
+    layout(
+      title = list(
+        text = paste0("<b>Top ", n_countries, " Countries by Average Salary</b>"),
+        font = list(size = 18, color = "#007bff")
+      ),
+      xaxis = list(
+        title = "<b>Employee Residence</b>",
+        titlefont = list(size = 14),
+        tickangle = -45
+      ),
+      yaxis = list(
+        title = "<b>Average Salary (USD)</b>",
+        titlefont = list(size = 14),
+        tickformat = "$,.0f"
+      ),
+      margin = list(b = 120),
+      plot_bgcolor = "#f8f9fa",
+      paper_bgcolor = "#ffffff"
+    )
+})
+```
+
+---
+
+### 📈 Salary Trends by Top 10 Residence Countries
+
+```{r}
+renderPlotly({
+  top_10_countries <- combined_data_clean %>%
+    group_by(employee_residence) %>%
+    summarise(mean_salary = mean(salary_in_usd, na.rm = TRUE)) %>%
+    arrange(desc(mean_salary)) %>%
+    head(10) %>%
+    pull(employee_residence)
+  
+  trend_data <- combined_data_clean %>%
+    filter(employee_residence %in% top_10_countries) %>%
+    group_by(employee_residence, work_year) %>%
+    summarise(avg_salary = mean(salary_in_usd, na.rm = TRUE), .groups = 'drop')
+  
+  plot_ly(trend_data,
+          x = ~work_year,
+          y = ~avg_salary,
+          color = ~employee_residence,
+          type = 'scatter',
+          mode = 'lines+markers',
+          line = list(width = 3),
+          marker = list(size = 8)) %>%
+    layout(
+      title = list(text = "<b>Salary Trends Over Years (Top 10 Countries)</b>"),
+      xaxis = list(title = "<b>Year</b>"),
+      yaxis = list(title = "<b>Average Salary (USD)</b>", tickformat = "$,.0f"),
+      legend = list(title = list(text = "<b>Country</b>")),
+      hovermode = "x unified"
+    )
+})
+```
+
+Data Explorer {data-icon="fa-table"}
+=========================================
+
+### 📋 Complete Dataset
+
+```{r}
+renderDT({
+  display_data <- combined_data_clean %>%
+    mutate(
+      `Salary (USD)` = salary_in_usd,
+      `Salary (PKR)` = salary_in_pkr
+    )
+  
+  datatable(display_data,
+            extensions = 'Buttons',
+            options = list(
+              dom = 'Bfrtip',
+              buttons = list(
+                list(extend = 'copy', className = 'btn-primary'),
+                list(extend = 'csv', className = 'btn-success', filename = 'complete_salary_data'),
+                list(extend = 'excel', className = 'btn-info', filename = 'complete_salary_data'),
+                list(extend = 'pdf', className = 'btn-danger', filename = 'complete_salary_data'),
+                list(extend = 'print', className = 'btn-warning')
+              ),
+              pageLength = 25,
+              lengthMenu = c(10, 25, 50, 100, 500),
+              scrollX = TRUE,
+              scrollY = "600px",
+              searchHighlight = TRUE,
+              initComplete = JS(
+                "function(settings, json) {",
+                "$(this.api().table().header()).css({'background-color': '#007bff', 'color': '#fff', 'font-weight': 'bold'});",
+                "}"
+              )
+            ),
+            filter = 'top',
+            rownames = FALSE,
+            class = 'cell-border stripe hover compact') %>%
+    formatCurrency('Salary (USD)', '$', digits = 0) %>%
+    formatCurrency('Salary (PKR)', '₨ ', digits = 0)
+})
+```

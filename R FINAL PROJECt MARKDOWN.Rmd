@@ -1,0 +1,260 @@
+---
+title: "Salary Data Analysis (2020-2023) FINAL PROJECT"
+author: "AHMAD AMMAR"
+date: "22nd december 2025"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    theme: cosmo
+    code_folding: show
+  word_document:
+    toc: true
+  pdf_document:
+    toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+# 1. Introduction
+
+This report analyzes salary data from 2020 to 2023. The analysis includes data cleaning, missing value detection, outlier identification, and descriptive statistics.
+
+# 2. Load Required Libraries
+
+```{r libraries}
+library(tidyverse)
+library(readxl)
+library(knitr)
+library(kableExtra)
+```
+What this does: This loads the tools (libraries) needed for the analysis. Tidyverse is for data work, readxl reads Excel files, knitr and kableExtra make nice tables.
+
+# 3. Data Import
+
+```{r data-import}
+# Set file paths
+data_path <- "C:/Users/HP/Desktop/R FINAL PROJECT/data/"
+
+# Load data from Excel files
+Data_2020_xlsx <- read_excel(paste0(data_path, "Data_2020.xlsx"))
+Data_2021_xlsx <- read_excel(paste0(data_path, "Data_2021.xlsx"))
+Data_2022_xlsx <- read_excel(paste0(data_path, "Data_2022.xlsx"))
+Data_2023_xlsx <- read_excel(paste0(data_path, "Data_2023.xlsx"))
+
+# Combine all years
+concatenated_data <- rbind(Data_2020_xlsx, Data_2021_xlsx, 
+                           Data_2022_xlsx, Data_2023_xlsx)
+
+# Display dataset dimensions
+cat("Total rows in combined data:", nrow(concatenated_data), "\n")
+cat("Total columns:", ncol(concatenated_data), "\n")
+```
+This section imports the data from four separate Excel files. First, it sets the directory path where the Excel files are stored. The read_excel() function from the readxl package reads each Excel file individually. The paste0() function concatenates the directory path with each filename.
+Each year's data is stored in a separate dataframe (Data_2020_xlsx, Data_2021_xlsx, etc.). Then, the rbind() function (row bind) combines all four dataframes by stacking them vertically, assuming they have the same column structure. Finally, nrow() counts the total number of rows (observations) and ncol() counts the total number of columns (variables) in the combined dataset, providing a quick check of the data size.
+# 4. Data Structure
+
+```{r data-structure}
+# View column names
+cat("Column Names:\n")
+print(colnames(concatenated_data))
+
+# Data structure
+str(concatenated_data)
+
+# First few rows
+head(concatenated_data) %>%
+  kable() %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"))
+```
+First, I look at all the column names to see what information I have
+
+Then I use str() (short for "structure") to see what type of data is in each column. This tells me if a column has numbers, text, dates, etc.
+
+Then I show the first 6 rows of data in a nice table. The table has:
+
+Stripes on alternating rows (easier to read)
+
+Hover effect (when you move mouse over a row, it highlights)
+
+Condensed format (takes less space)
+# 5. Missing Data Analysis
+
+```{r missing-data}
+# Calculate missing percentages
+missing_percentage <- concatenated_data %>%
+  summarise(across(everything(), ~sum(is.na(.)) / n() * 100)) %>%
+  pivot_longer(everything(), names_to = "Variable", values_to = "Missing_Percentage")
+
+# Display missing data table
+missing_percentage %>%
+  arrange(desc(Missing_Percentage)) %>%
+  kable(caption = "Missing Data Percentage by Variable", digits = 2) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"))
+
+# Visualize missing data
+ggplot(missing_percentage, aes(x = reorder(Variable, Missing_Percentage), 
+                               y = Missing_Percentage)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  coord_flip() +
+  labs(title = "Missing Data Percentage by Variable",
+       x = "Variable",
+       y = "Missing Percentage (%)") +
+  theme_minimal()
+```
+I calculate how much data is missing in each column. For example, if "Salary" column has 10 missing values out of 100 rows, that's 10% missing
+
+I make a table that shows all columns sorted by which has the most missing data (highest percentage at top)
+
+I create a bar chart to visualize the missing data. The chart has:
+
+Blue bars
+
+Flipped coordinates (bars go sideways so column names are easier to read)
+
+Clean, simple design
+# 6. Data Cleaning
+
+```{r data-cleaning}
+# Remove rows with NA values
+combined_data_clean <- na.omit(concatenated_data)
+
+cat("Rows before cleaning:", nrow(concatenated_data), "\n")
+cat("Rows after cleaning:", nrow(combined_data_clean), "\n")
+cat("Rows removed:", nrow(concatenated_data) - nrow(combined_data_clean), "\n")
+```
+
+# 7. Outlier Detection
+
+```{r outlier-detection}
+# Function to detect outliers using IQR method
+detect_outliers <- function(x) {
+  Q1 <- quantile(x, 0.25, na.rm = TRUE)
+  Q3 <- quantile(x, 0.75, na.rm = TRUE)
+  IQR <- Q3 - Q1
+  outliers <- x < (Q1 - 1.5*IQR) | x > (Q3 + 1.5*IQR)
+  return(sum(outliers, na.rm = TRUE))
+}
+
+# Apply to numerical columns
+numerical_cols <- combined_data_clean %>% select(where(is.numeric))
+outlier_counts <- sapply(numerical_cols, detect_outliers)
+
+# Display outlier counts
+outlier_df <- data.frame(
+  Variable = names(outlier_counts),
+  Outlier_Count = outlier_counts
+)
+
+outlier_df %>%
+  arrange(desc(Outlier_Count)) %>%
+  kable(caption = "Outlier Counts by Variable") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"))
+```
+
+# 8. Descriptive Statistics
+
+```{r descriptive-stats}
+# Five-value summary function
+five_value_summary <- function(data) {
+  numerical_data <- data %>% select(where(is.numeric))
+  
+  summary_table <- data.frame(
+    Variable = names(numerical_data),
+    Min = sapply(numerical_data, min, na.rm = TRUE),
+    Max = sapply(numerical_data, max, na.rm = TRUE),
+    Mean = sapply(numerical_data, mean, na.rm = TRUE),
+    Median = sapply(numerical_data, median, na.rm = TRUE),
+    SD = sapply(numerical_data, sd, na.rm = TRUE)
+  )
+  
+  return(summary_table)
+}
+
+# Generate summary statistics
+summary_stats <- five_value_summary(combined_data_clean)
+
+summary_stats %>%
+  kable(caption = "Five-Value Summary Statistics", digits = 2) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"))
+```
+
+# 9. Distribution Visualizations
+
+```{r distributions, fig.width=10, fig.height=6}
+# Create histograms for numerical variables
+numerical_data <- combined_data_clean %>% select(where(is.numeric))
+
+for (col in names(numerical_data)) {
+  p <- ggplot(combined_data_clean, aes_string(x = col)) +
+    geom_histogram(bins = 30, fill = "steelblue", color = "black", alpha = 0.7) +
+    labs(title = paste("Distribution of", col),
+         x = col,
+         y = "Frequency") +
+    theme_minimal()
+  print(p)
+}
+```
+First, I select only the number columns from my clean data
+Then I create a histogram for each number column. A histogram is like a bar chart that shows:
+How many values fall into different ranges (bins)
+The shape of the data (is it mostly low values? high values? evenly spread?)
+Each histogram has:
+30 bars (bins, Blue fill with black borders
+Semi-transparent color (alpha = 0.7)
+A title saying "Distribution of [column name]"
+Clean, simple design
+# 10. Export Cleaned Data
+
+```{r export-data}
+# Save combined dataset
+write.csv(concatenated_data, "combined_salaries_data.csv", row.names = FALSE)
+write.csv(combined_data_clean, "combined_salaries_data_clean.csv", row.names = FALSE)
+
+cat("Data exported successfully!\n")
+cat("Files saved:\n")
+cat("- combined_salaries_data.csv (original)\n")
+cat("- combined_salaries_data_clean.csv (cleaned)\n")
+```
+I save two CSV files to my computer:
+combined_salaries_data.csv: The original combined data (with missing values)
+combined_salaries_data_clean.csv: The cleaned data (no missing values)
+row.names = FALSE means don't save the row numbers as a column
+I print a message confirming the files were saved and listing their names
+# 11. Conclusion
+
+This analysis has successfully:
+
+- Loaded and combined salary data from 2020-2023
+- Identified missing values and their percentages
+- Cleaned the dataset by removing incomplete records
+- Detected outliers using the IQR method
+- Generated comprehensive descriptive statistics
+- Visualized data distributions
+- Exported cleaned datasets for further analysis
+
+## Key Findings
+
+- Total records analyzed: `r nrow(concatenated_data)`
+- Clean records after removing NAs: `r nrow(combined_data_clean)`
+- Data quality rate: `r round(nrow(combined_data_clean)/nrow(concatenated_data)*100, 2)`%
+
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
