@@ -50,6 +50,27 @@ style_table <- function(df, caption = NULL) {
       position = "left"
     )
 }
+
+# Retry helper: attempts fn() up to `tries` times with exponential backoff.
+# Returns NULL on ultimate failure instead of stopping the report.
+with_retry <- function(fn, tries = 3, base_wait = 2) {
+  for (i in seq_len(tries)) {
+    out <- tryCatch(fn(), error = function(e) {
+      message(sprintf("Attempt %d/%d failed: %s", i, tries, e$message))
+      NULL
+    })
+    if (!is.null(out)) return(out)
+    if (i < tries) Sys.sleep(base_wait * (2 ^ (i - 1)))
+  }
+  NULL
+}
+
+notice <- function(msg) {
+  cat(sprintf(
+    "<div style='padding:12px;border-left:4px solid #E67E22;background:#FFF3E0;color:#7A4F01;border-radius:4px;'>%s</div>",
+    msg
+  ))
+}
 ```
 
 # Executive Summary
@@ -77,7 +98,7 @@ The goal: identify exactly where the site is losing visitors, search rankings, o
 
 # 1. Live Page Performance (Google PageSpeed Insights)
 
-```{r psi-fetch}
+```{r psi-fetch, error=TRUE}
 fetch_psi <- function(url, strategy = "mobile") {
   q <- paste0(
     PSI_ENDPOINT,
@@ -88,9 +109,11 @@ fetch_psi <- function(url, strategy = "mobile") {
     "&category=accessibility",
     "&category=best-practices"
   )
-  resp <- tryCatch(GET(q, timeout(60)), error = function(e) NULL)
-  if (is.null(resp) || http_error(resp)) return(NULL)
-  content(resp, as = "parsed", type = "application/json")
+  with_retry(function() {
+    resp <- GET(q, timeout(90))
+    if (http_error(resp)) stop("HTTP ", status_code(resp))
+    content(resp, as = "parsed", type = "application/json")
+  })
 }
 
 psi_mobile  <- fetch_psi(TARGET_URL, "mobile")
@@ -114,16 +137,16 @@ scores <- bind_rows(
 )
 ```
 
-```{r psi-table}
-if (nrow(scores) > 0) {
-  style_table(scores, caption = "Lighthouse scores (0–100) — live from Google PageSpeed Insights")
+```{r psi-table, results='asis'}
+if (!is.null(scores) && nrow(scores) > 0) {
+  print(style_table(scores, caption = "Lighthouse scores (0–100) — live from Google PageSpeed Insights"))
 } else {
-  cat("PageSpeed Insights API did not return data. Check internet connection and try again.")
+  notice("Google PageSpeed Insights API did not return data after 3 attempts. This usually means a temporary rate limit or network blip. Re-knit the report in 60 seconds, or set a free PSI API key in the setup chunk.")
 }
 ```
 
-```{r psi-chart, fig.height=4}
-if (nrow(scores) > 0) {
+```{r psi-chart, fig.height=4, error=TRUE}
+if (!is.null(scores) && nrow(scores) > 0) {
   scores %>%
     pivot_longer(-Strategy, names_to = "Category", values_to = "Score") %>%
     ggplot(aes(x = Category, y = Score, fill = Strategy)) +
@@ -187,23 +210,36 @@ if (!is.null(cwv)) {
 
 # 2. On-Page SEO Audit (Live HTML Scrape)
 
-```{r scrape-page}
+```{r scrape-page, error=TRUE}
 fetch_html <- function(url) {
-  resp <- tryCatch(
-    GET(url, user_agent(USER_AGENT), timeout(30)),
-    error = function(e) NULL
-  )
-  if (is.null(resp) || http_error(resp)) return(NULL)
-  list(
-    response = resp,
-    html     = read_html(content(resp, as = "text", encoding = "UTF-8"))
-  )
+  with_retry(function() {
+    resp <- GET(
+      url,
+      user_agent(USER_AGENT),
+      add_headers(`Accept-Language` = "en-US,en;q=0.9",
+                  Accept = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"),
+      timeout(60)
+    )
+    if (http_error(resp)) stop("HTTP ", status_code(resp))
+    body <- content(resp, as = "text", encoding = "UTF-8")
+    if (is.null(body) || nchar(body) < 100) stop("Empty or truncated response")
+    list(response = resp, html = read_html(body))
+  })
 }
 
 page <- fetch_html(TARGET_URL)
+
+if (is.null(page)) {
+  notice(paste0(
+    "Could not fetch <code>", TARGET_URL, "</code> after 3 retries. ",
+    "Possible causes: site is temporarily down, blocking automated requests, ",
+    "or your network is restricting outbound HTTPS. ",
+    "Sections 2–5 below will be skipped. Re-knit when the site is reachable."
+  ))
+}
 ```
 
-```{r seo-extract}
+```{r seo-extract, error=TRUE}
 seo_summary <- function(page, url) {
   if (is.null(page)) {
     return(tibble(Field = "Status", Value = "Could not fetch page"))
@@ -252,9 +288,13 @@ seo_tbl <- seo_summary(page, TARGET_URL)
 style_table(seo_tbl, caption = "On-page SEO snapshot (live from iac-studio.com)")
 ```
 
+```{r seo-extract-fallback, results='asis', echo=FALSE}
+if (is.null(page)) notice("Skipping on-page SEO checks because the page could not be fetched.")
+```
+
 ## Heading Structure (H1 → H6)
 
-```{r headings}
+```{r headings, error=TRUE}
 heading_audit <- function(page) {
   if (is.null(page)) return(tibble())
   map_dfr(1:6, function(i) {
@@ -284,18 +324,21 @@ if (nrow(h_tbl) > 0) {
 
 # 3. Content & Link Profile
 
-```{r content-stats}
+```{r content-stats, error=TRUE, results='asis'}
 content_stats <- function(page, url) {
   if (is.null(page)) return(NULL)
   doc <- page$html
-  body_text <- doc %>% html_element("body") %>% html_text(trim = TRUE)
-  words <- str_split(body_text, "\\s+")[[1]]
+  body_node <- doc %>% html_element("body")
+  body_text <- if (inherits(body_node, "xml_missing")) "" else html_text(body_node, trim = TRUE)
+  words <- if (nchar(body_text) > 0) str_split(body_text, "\\s+")[[1]] else character(0)
   words <- words[nchar(words) > 0]
 
   links <- doc %>% html_elements("a") %>% html_attr("href")
   links <- links[!is.na(links) & links != "" & !str_starts(links, "#") & !str_starts(links, "javascript:")]
   domain <- httr::parse_url(url)$hostname
-  is_internal <- str_detect(links, fixed(domain)) | str_starts(links, "/")
+  is_internal <- if (length(links) > 0) {
+    str_detect(links, fixed(domain)) | str_starts(links, "/")
+  } else logical(0)
 
   imgs <- doc %>% html_elements("img")
   alt_texts <- imgs %>% html_attr("alt")
@@ -324,14 +367,18 @@ content_stats <- function(page, url) {
 }
 
 cs <- content_stats(page, TARGET_URL)
-if (!is.null(cs)) style_table(cs, caption = "Content & link profile (live)")
+if (!is.null(cs)) {
+  print(style_table(cs, caption = "Content & link profile (live)"))
+} else {
+  notice("Skipping content & link profile because the page could not be fetched.")
+}
 ```
 
 ---
 
 # 4. Server, Security & Tech Stack
 
-```{r security-headers}
+```{r security-headers, error=TRUE, results='asis'}
 security_audit <- function(page) {
   if (is.null(page)) return(NULL)
   h <- headers(page$response)
@@ -357,10 +404,14 @@ security_audit <- function(page) {
 }
 
 sec <- security_audit(page)
-if (!is.null(sec)) style_table(sec, caption = "Security & server response headers")
+if (!is.null(sec)) {
+  print(style_table(sec, caption = "Security & server response headers"))
+} else {
+  notice("Skipping security header check because the page could not be fetched.")
+}
 ```
 
-```{r tech-detect}
+```{r tech-detect, error=TRUE, results='asis'}
 detect_tech <- function(page) {
   if (is.null(page)) return(NULL)
   doc <- page$html
@@ -386,14 +437,18 @@ detect_tech <- function(page) {
 }
 
 tech <- detect_tech(page)
-if (!is.null(tech)) style_table(tech, caption = "Technology fingerprint (best-effort detection)")
+if (!is.null(tech)) {
+  print(style_table(tech, caption = "Technology fingerprint (best-effort detection)"))
+} else {
+  notice("Skipping tech fingerprint because the page could not be fetched.")
+}
 ```
 
 ---
 
 # 5. Multi-Page Comparison
 
-```{r multipage}
+```{r multipage, error=TRUE}
 all_pages <- c(TARGET_URL, EXTRA_PAGES)
 
 page_metrics <- map_dfr(all_pages, function(u) {
@@ -430,7 +485,7 @@ style_table(page_metrics, caption = "Page-by-page snapshot (live)")
 
 # 6. Prioritized Recommendations
 
-```{r recommendations}
+```{r recommendations, error=TRUE}
 recommendations <- function(scores, cwv, seo_tbl, sec, cs) {
   recs <- list()
 
@@ -445,6 +500,12 @@ recommendations <- function(scores, cwv, seo_tbl, sec, cs) {
         Action = "Compress and lazy-load images, defer non-critical JS, enable browser caching, use a CDN."
       )
     }
+  }
+
+  if (is.null(seo_tbl) || !"Field" %in% names(seo_tbl)) {
+    return(tibble(Priority = "INFO", Area = "Data",
+                  Finding = "Page could not be fetched, so on-page recommendations were skipped.",
+                  Action = "Re-knit the report when the site is reachable."))
   }
 
   # Meta description
