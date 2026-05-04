@@ -46,6 +46,13 @@ PSI_ENDPOINT  <- "https://www.googleapis.com/pagespeedonline/v5/runPagespeed"
 # inside the iac-studio-audit/ folder.
 LOCAL_HTML_PATH <- "iac-studio.html"
 
+# Manual fallback for PageSpeed scores. If you can't reach the PSI API from R,
+# go to https://pagespeed.web.dev/, run an audit on TARGET_URL, then save the
+# JSON result (browser DevTools -> Network -> right-click on the runPagespeed
+# response -> "Save as..."). Save mobile + desktop runs to these paths:
+LOCAL_PSI_MOBILE_PATH  <- "psi-mobile.json"
+LOCAL_PSI_DESKTOP_PATH <- "psi-desktop.json"
+
 `%||%` <- function(a, b) if (is.null(a) || length(a) == 0 || (length(a) == 1 && is.na(a))) b else a
 
 style_table <- function(df, caption = NULL) {
@@ -105,7 +112,7 @@ The goal: identify exactly where the site is losing visitors, search rankings, o
 # 1. Live Page Performance (Google PageSpeed Insights)
 
 ```{r psi-fetch, error=TRUE}
-fetch_psi <- function(url, strategy = "mobile") {
+fetch_psi_api <- function(url, strategy = "mobile") {
   q <- paste0(
     PSI_ENDPOINT,
     "?url=", URLencode(url, reserved = TRUE),
@@ -122,8 +129,18 @@ fetch_psi <- function(url, strategy = "mobile") {
   })
 }
 
-psi_mobile  <- fetch_psi(TARGET_URL, "mobile")
-psi_desktop <- fetch_psi(TARGET_URL, "desktop")
+fetch_psi <- function(url, strategy, local_path) {
+  out <- fetch_psi_api(url, strategy)
+  if (!is.null(out)) return(out)
+  if (!is.null(local_path) && file.exists(local_path)) {
+    message("Loading PSI ", strategy, " result from local file: ", local_path)
+    return(jsonlite::fromJSON(local_path, simplifyVector = FALSE))
+  }
+  NULL
+}
+
+psi_mobile  <- fetch_psi(TARGET_URL, "mobile",  LOCAL_PSI_MOBILE_PATH)
+psi_desktop <- fetch_psi(TARGET_URL, "desktop", LOCAL_PSI_DESKTOP_PATH)
 
 extract_scores <- function(psi, label) {
   if (is.null(psi)) return(NULL)
