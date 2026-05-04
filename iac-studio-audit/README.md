@@ -49,3 +49,26 @@ To audit other pages, add URLs to `EXTRA_PAGES`.
   https://developers.google.com/speed/docs/insights/v5/get-started and append
   `&key=YOUR_KEY` inside `fetch_psi()`.
 - Re-rendering takes ~30–90 seconds depending on Google's response time.
+
+## If the site can't be fetched (Section 3 says "could not connect")
+
+The report tries 3 strategies in order before giving up:
+
+1. **Direct fetch** with full browser-style headers (3 attempts, exponential backoff)
+2. **Wayback Machine** snapshot fallback (2 attempts) — uses the most recent
+   archive.org snapshot if the live site refuses connections
+3. **Local file fallback** — load HTML you saved manually
+
+If all three fail you'll see a yellow notice in the report. To use the local
+fallback:
+
+1. Open `https://iac-studio.com/` in your browser.
+2. Press **Ctrl+S** (or Cmd+S on Mac).
+3. Choose **"Webpage, HTML Only"**.
+4. Save it as `iac-studio.html` inside the `iac-studio-audit/` folder
+   (next to `iac_studio_audit.Rmd`).
+5. Re-knit the report. It will load the saved HTML and continue.
+
+> Sections that depend on live response headers (Section 4 — Security headers)
+> can only be filled with a live fetch, so they'll be skipped when running off
+> a cached/local copy.

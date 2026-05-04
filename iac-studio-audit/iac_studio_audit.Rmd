@@ -40,6 +40,12 @@ EXTRA_PAGES   <- c("https://iac-studio.com/our-services/")
 USER_AGENT    <- "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
 PSI_ENDPOINT  <- "https://www.googleapis.com/pagespeedonline/v5/runPagespeed"
 
+# Manual fallback: if all online fetch attempts fail, the report will look for
+# saved HTML at this path. To use it, open TARGET_URL in your browser, choose
+# "Save Page As..." -> "Webpage, HTML Only", and save it as iac-studio.html
+# inside the iac-studio-audit/ folder.
+LOCAL_HTML_PATH <- "iac-studio.html"
+
 `%||%` <- function(a, b) if (is.null(a) || length(a) == 0 || (length(a) == 1 && is.na(a))) b else a
 
 style_table <- function(df, caption = NULL) {
@@ -210,32 +216,86 @@ if (!is.null(cwv)) {
 
 # 2. On-Page SEO Audit (Live HTML Scrape)
 
-```{r scrape-page, error=TRUE}
-fetch_html <- function(url) {
-  with_retry(function() {
-    resp <- GET(
-      url,
-      user_agent(USER_AGENT),
-      add_headers(`Accept-Language` = "en-US,en;q=0.9",
-                  Accept = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"),
-      timeout(60)
-    )
-    if (http_error(resp)) stop("HTTP ", status_code(resp))
-    body <- content(resp, as = "text", encoding = "UTF-8")
-    if (is.null(body) || nchar(body) < 100) stop("Empty or truncated response")
-    list(response = resp, html = read_html(body))
-  })
+```{r scrape-page, error=TRUE, results='asis'}
+# Strategy 1: direct fetch with full browser-style headers
+fetch_direct <- function(url) {
+  resp <- GET(
+    url,
+    user_agent(USER_AGENT),
+    add_headers(
+      `Accept`           = "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+      `Accept-Language`  = "en-US,en;q=0.9",
+      `Accept-Encoding`  = "gzip, deflate, br",
+      `Cache-Control`    = "no-cache",
+      `Pragma`           = "no-cache",
+      `Sec-Fetch-Dest`   = "document",
+      `Sec-Fetch-Mode`   = "navigate",
+      `Sec-Fetch-Site`   = "none",
+      `Sec-Fetch-User`   = "?1",
+      `Upgrade-Insecure-Requests` = "1"
+    ),
+    timeout(60)
+  )
+  if (http_error(resp)) stop("HTTP ", status_code(resp))
+  body <- content(resp, as = "text", encoding = "UTF-8")
+  if (is.null(body) || nchar(body) < 100) stop("Empty or truncated response")
+  list(response = resp, html = read_html(body), source = "direct")
 }
 
-page <- fetch_html(TARGET_URL)
+# Strategy 2: fetch the most recent Wayback Machine snapshot
+fetch_wayback <- function(url) {
+  api <- paste0("https://archive.org/wayback/available?url=",
+                URLencode(url, reserved = TRUE))
+  meta_resp <- GET(api, timeout(30))
+  if (http_error(meta_resp)) stop("Wayback API error ", status_code(meta_resp))
+  meta <- content(meta_resp, as = "parsed", type = "application/json")
+  snap_url <- meta$archived_snapshots$closest$url
+  if (is.null(snap_url)) stop("No Wayback snapshot available")
+  resp <- GET(snap_url, user_agent(USER_AGENT), timeout(60))
+  if (http_error(resp)) stop("Wayback fetch HTTP ", status_code(resp))
+  body <- content(resp, as = "text", encoding = "UTF-8")
+  list(response = resp, html = read_html(body), source = paste0("wayback (", snap_url, ")"))
+}
+
+# Strategy 3: load a manually-saved HTML file from disk
+fetch_local <- function(path) {
+  if (!file.exists(path)) stop("Local HTML not found at ", path)
+  body <- paste(readLines(path, warn = FALSE, encoding = "UTF-8"), collapse = "\n")
+  list(response = NULL, html = read_html(body), source = paste0("local file (", path, ")"))
+}
+
+fetch_html <- function(url, local_fallback = NULL) {
+  out <- with_retry(function() fetch_direct(url), tries = 3)
+  if (!is.null(out)) return(out)
+
+  message("Direct fetch failed, trying Wayback Machine...")
+  out <- with_retry(function() fetch_wayback(url), tries = 2)
+  if (!is.null(out)) return(out)
+
+  if (!is.null(local_fallback)) {
+    message("Wayback failed, trying local file...")
+    out <- tryCatch(fetch_local(local_fallback), error = function(e) NULL)
+    if (!is.null(out)) return(out)
+  }
+  NULL
+}
+
+page <- fetch_html(TARGET_URL, local_fallback = LOCAL_HTML_PATH)
 
 if (is.null(page)) {
   notice(paste0(
-    "Could not fetch <code>", TARGET_URL, "</code> after 3 retries. ",
-    "Possible causes: site is temporarily down, blocking automated requests, ",
-    "or your network is restricting outbound HTTPS. ",
-    "Sections 2–5 below will be skipped. Re-knit when the site is reachable."
+    "<strong>Could not fetch <code>", TARGET_URL, "</code>.</strong><br>",
+    "Tried: direct request (3x), Wayback Machine (2x), and local fallback file <code>",
+    LOCAL_HTML_PATH, "</code>.<br><br>",
+    "<strong>Manual workaround:</strong> open ",
+    "<a href='", TARGET_URL, "' target='_blank'>", TARGET_URL, "</a> ",
+    "in your browser, press Ctrl+S, choose <em>Webpage, HTML Only</em>, ",
+    "save as <code>", LOCAL_HTML_PATH, "</code> inside the ",
+    "<code>iac-studio-audit/</code> folder, then re-knit. ",
+    "Sections 2–5 below have been skipped for this render."
   ))
+} else {
+  notice(paste0("Page fetched successfully via <strong>", page$source, "</strong>."))
 }
 ```
 
@@ -380,7 +440,7 @@ if (!is.null(cs)) {
 
 ```{r security-headers, error=TRUE, results='asis'}
 security_audit <- function(page) {
-  if (is.null(page)) return(NULL)
+  if (is.null(page) || is.null(page$response)) return(NULL)
   h <- headers(page$response)
   check <- function(name, recommended = "Set any value") {
     val <- h[[tolower(name)]]
@@ -406,6 +466,8 @@ security_audit <- function(page) {
 sec <- security_audit(page)
 if (!is.null(sec)) {
   print(style_table(sec, caption = "Security & server response headers"))
+} else if (!is.null(page) && is.null(page$response)) {
+  notice("Skipping security header check: page was loaded from a cached source (Wayback / local file), so live response headers are unavailable. Re-knit when the live site is reachable to capture them.")
 } else {
   notice("Skipping security header check because the page could not be fetched.")
 }
