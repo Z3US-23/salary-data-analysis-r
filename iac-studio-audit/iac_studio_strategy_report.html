@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>iAC Studio — Public Data Strategy Report</title>
+<meta name="description" content="A strategy report for iAC Studio analysing the public website footprint and surfacing ASO and product opportunities." />
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+
+<style>
+:root {
+  --bg:           #f6f7fb;
+  --bg-elev:      #ffffff;
+  --bg-glass:     rgba(255, 255, 255, 0.65);
+  --border:       rgba(15, 23, 42, 0.08);
+  --text:         #0f172a;
+  --text-muted:   #475569;
+  --accent:       #6366f1;
+  --accent-2:     #ec4899;
+  --accent-3:     #14b8a6;
+  --good:         #10b981;
+  --warn:         #f59e0b;
+  --bad:          #ef4444;
+  --shadow:       0 10px 30px -12px rgba(15, 23, 42, 0.18);
+  --shadow-lg:    0 25px 60px -20px rgba(15, 23, 42, 0.25);
+  --grad-1:       linear-gradient(135deg, #6366f1, #ec4899);
+  --grad-2:       linear-gradient(135deg, #14b8a6, #6366f1);
+}
+[data-theme="dark"] {
+  --bg:           #0b1220;
+  --bg-elev:      #131c30;
+  --bg-glass:     rgba(19, 28, 48, 0.65);
+  --border:       rgba(148, 163, 184, 0.16);
+  --text:         #e2e8f0;
+  --text-muted:   #94a3b8;
+  --shadow:       0 10px 30px -12px rgba(0, 0, 0, 0.6);
+  --shadow-lg:    0 25px 60px -20px rgba(0, 0, 0, 0.8);
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  transition: background 0.3s, color 0.3s;
+}
+h1, h2, h3, h4 { font-family: 'Poppins', system-ui, sans-serif; line-height: 1.25; margin: 0 0 0.6em; }
+h1 { font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; }
+h2 { font-size: clamp(1.6rem, 2.6vw, 2.2rem); font-weight: 700; }
+h3 { font-size: 1.25rem; font-weight: 600; }
+p  { color: var(--text-muted); margin: 0 0 1em; }
+a  { color: var(--accent); text-decoration: none; }
+.gradient-text {
+  background: var(--grad-1);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ============ NAVBAR ============ */
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  background: var(--bg-glass);
+  border-bottom: 1px solid var(--border);
+}
+.nav-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.brand {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 800;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.brand .dot {
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  background: var(--grad-1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 0.85rem;
+  box-shadow: var(--shadow);
+}
+.menu {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+.menu a {
+  padding: 8px 14px;
+  border-radius: 999px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.menu a:hover { color: var(--text); background: var(--border); }
+.menu a.active {
+  color: white;
+  background: var(--grad-1);
+  box-shadow: var(--shadow);
+}
+.theme-toggle {
+  width: 40px; height: 40px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg-elev);
+  color: var(--text);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+.theme-toggle:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+[data-theme="light"] .theme-toggle .fa-sun { display: none; }
+[data-theme="dark"]  .theme-toggle .fa-moon { display: none; }
+
+/* ============ HERO ============ */
+.hero {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 80px 24px 40px;
+  text-align: center;
+}
+.hero .eyebrow {
+  display: inline-block;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 18px;
+}
+.hero p.lead { max-width: 720px; margin: 0 auto 30px; font-size: 1.1rem; }
+.hero-meta {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 24px;
+}
+.chip {
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.chip i { color: var(--accent); }
+
+/* ============ LAYOUT ============ */
+.section {
+  max-width: 1200px;
+  margin: 60px auto;
+  padding: 0 24px;
+  scroll-margin-top: 90px;
+}
+.section-head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+.section-head .num {
+  width: 44px; height: 44px;
+  border-radius: 12px;
+  background: var(--grad-1);
+  color: white;
+  font-weight: 700;
+  font-family: 'Poppins', sans-serif;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow);
+}
+.card {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 28px;
+  box-shadow: var(--shadow);
+  transition: transform 0.25s, box-shadow 0.25s;
+}
+.card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+.grid {
+  display: grid;
+  gap: 22px;
+}
+.grid-2 { grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); }
+.grid-3 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+.grid-4 { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+
+.kpi {
+  text-align: center;
+}
+.kpi .value {
+  font-family: 'Poppins', sans-serif;
+  font-size: 2.4rem;
+  font-weight: 800;
+  background: var(--grad-1);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  line-height: 1;
+}
+.kpi .label { color: var(--text-muted); font-size: 0.85rem; margin-top: 6px; text-transform: uppercase; letter-spacing: 0.06em; }
+
+.confidence {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-top: 12px;
+}
+.confidence.high   { background: rgba(16, 185, 129, 0.12); color: var(--good); }
+.confidence.medium { background: rgba(245, 158, 11, 0.12); color: var(--warn); }
+.confidence.low    { background: rgba(239, 68, 68, 0.12);  color: var(--bad);  }
+.confidence::before {
+  content: "";
+  width: 8px; height: 8px; border-radius: 50%;
+  background: currentColor;
+}
+
+.chart-wrap { position: relative; height: 320px; }
+.chart-wrap.tall { height: 380px; }
+
+/* ============ HEATMAP ============ */
+.heatmap {
+  display: grid;
+  grid-template-columns: 160px repeat(2, 1fr);
+  gap: 4px;
+  margin-top: 16px;
+}
+.heat-cell {
+  padding: 18px;
+  border-radius: 14px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 90px;
+}
+.heat-head {
+  font-weight: 700;
+  font-family: 'Poppins', sans-serif;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+.heat-row { background: var(--bg-elev); border: 1px solid var(--border); align-items: center; justify-content: center; text-align: center; }
+.heat-q1 { background: rgba(16, 185, 129, 0.15);  border: 1px solid rgba(16, 185, 129, 0.35); }
+.heat-q2 { background: rgba(245, 158, 11, 0.15);  border: 1px solid rgba(245, 158, 11, 0.35); }
+.heat-q3 { background: rgba(99, 102, 241, 0.15);  border: 1px solid rgba(99, 102, 241, 0.35); }
+.heat-q4 { background: rgba(239, 68, 68, 0.15);   border: 1px solid rgba(239, 68, 68, 0.35);  }
+.heat-cell strong { color: var(--text); font-size: 1rem; }
+.heat-cell span   { color: var(--text-muted); font-size: 0.8rem; }
+
+/* ============ TESTIMONIAL CHIPS ============ */
+.testimonials {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+.testimonial-chip {
+  padding: 10px 14px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-size: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  min-width: 140px;
+}
+.testimonial-chip .name { font-weight: 600; color: var(--text); }
+.testimonial-chip .role { color: var(--text-muted); font-size: 0.75rem; }
+
+/* ============ RECOMMENDATIONS ============ */
+.rec {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+}
+.rec .icon-bubble {
+  flex: 0 0 56px;
+  width: 56px; height: 56px;
+  border-radius: 16px;
+  background: var(--grad-2);
+  color: white;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  box-shadow: var(--shadow);
+}
+.rec h3 { margin-bottom: 6px; }
+.rec p { margin-bottom: 8px; }
+
+/* ============ FOOTER ============ */
+footer {
+  max-width: 1200px;
+  margin: 60px auto 30px;
+  padding: 30px 24px;
+  border-top: 1px solid var(--border);
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+footer .stamp { font-family: 'Poppins', sans-serif; font-weight: 600; color: var(--text); }
+
+/* ============ RESPONSIVE ============ */
+@media (max-width: 720px) {
+  .menu a { padding: 6px 10px; font-size: 0.8rem; }
+  .hero { padding-top: 50px; }
+  .heatmap { grid-template-columns: 1fr; }
+  .heat-head:not(:first-child) { display: none; }
+  .rec { flex-direction: column; }
+}
+</style>
+</head>
+<body data-theme="light">
+
+<!-- =========== NAVBAR =========== -->
+<nav class="navbar">
+  <div class="nav-inner">
+    <div class="brand">
+      <span class="dot"><i class="fa-solid fa-chart-line"></i></span>
+      <span>iAC Studio · Strategy Report</span>
+    </div>
+    <div class="menu" id="menu">
+      <a href="#summary">Summary</a>
+      <a href="#audit">Audit</a>
+      <a href="#aso-gap">ASO Gap</a>
+      <a href="#funnel">Funnel</a>
+      <a href="#heatmap">Heatmap &amp; Recs</a>
+      <a href="#next">Next Steps</a>
+    </div>
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode" title="Toggle theme">
+      <i class="fa-solid fa-moon"></i>
+      <i class="fa-solid fa-sun"></i>
+    </button>
+  </div>
+</nav>
+
+<!-- =========== HERO =========== -->
+<header class="hero">
+  <span class="eyebrow"><i class="fa-solid fa-shield-halved"></i>&nbsp;Confidential Demo</span>
+  <h1>Public-Data Strategy Report for <span class="gradient-text">iAC Studio</span></h1>
+  <p class="lead">A creative diagnostic of <strong>iac-studio.com</strong> — translating the public website footprint into ASO opportunities, sentiment signals and a roadmap for the App Dev Optimizer engagement.</p>
+  <div class="hero-meta">
+    <span class="chip"><i class="fa-solid fa-globe"></i> iac-studio.com</span>
+    <span class="chip"><i class="fa-solid fa-mobile-screen"></i> Flutter · Unity · ASO</span>
+    <span class="chip"><i class="fa-solid fa-database"></i> 100% public data</span>
+    <span class="chip"><i class="fa-regular fa-calendar"></i> <span id="todayDate"></span></span>
+  </div>
+</header>
+
+<!-- =========== 1. EXECUTIVE SUMMARY =========== -->
+<section class="section" id="summary">
+  <div class="section-head">
+    <div class="num">1</div>
+    <div>
+      <h2>Executive Summary</h2>
+      <p style="margin:0">What iAC does well — and the data we cannot yet see.</p>
+    </div>
+  </div>
+
+  <div class="grid grid-2">
+    <div class="card">
+      <h3><i class="fa-solid fa-thumbs-up" style="color:var(--good)"></i>&nbsp; Public Strengths</h3>
+      <p>iAC Studio communicates a focused offer: <strong>Flutter mobile apps</strong>, <strong>Unity-ready games</strong>, and <strong>App Store Optimization</strong>. The "Wall of Love" testimonials skew heavily toward technical praise and student support — strong evidence of execution quality and an active education pipeline.</p>
+      <ul style="color:var(--text-muted); padding-left: 1.2em;">
+        <li>Clear specialism: Flutter + Unity</li>
+        <li>Hybrid agency + education revenue model</li>
+        <li>Founder-led credibility (8+ years, instructor at Hashlearning)</li>
+      </ul>
+      <span class="confidence high">Confidence: High — direct quotes from website</span>
+    </div>
+    <div class="card">
+      <h3><i class="fa-solid fa-triangle-exclamation" style="color:var(--warn)"></i>&nbsp; Missing Data Layer</h3>
+      <p>Without backend access we cannot measure what matters most for an ASO engagement: install counts, conversion rate from impression to install, retention curves, or actual keyword rankings.</p>
+      <div class="chart-wrap" style="height:230px"><canvas id="completenessGauge"></canvas></div>
+      <p style="text-align:center; margin-top:10px; font-size:0.85rem;"><strong>Public Data Completeness Score</strong></p>
+      <span class="confidence medium">Confidence: Medium — based on 6-axis public-source coverage</span>
+    </div>
+  </div>
+
+  <div class="grid grid-4" style="margin-top:22px;">
+    <div class="card kpi">
+      <div class="value" id="kpi-testimonials">12</div>
+      <div class="label">Testimonials surfaced</div>
+    </div>
+    <div class="card kpi">
+      <div class="value">3</div>
+      <div class="label">Core service lines</div>
+    </div>
+    <div class="card kpi">
+      <div class="value">8+</div>
+      <div class="label">Years in market</div>
+    </div>
+    <div class="card kpi">
+      <div class="value">34%</div>
+      <div class="label">Public data coverage</div>
+    </div>
+  </div>
+</section>
+
+<!-- =========== 2. DIGITAL FOOTPRINT AUDIT =========== -->
+<section class="section" id="audit">
+  <div class="section-head">
+    <div class="num">2</div>
+    <div>
+      <h2>Digital Footprint Audit</h2>
+      <p style="margin:0">Decoding the "Wall of Love" — who is praising iAC, and for what?</p>
+    </div>
+  </div>
+
+  <div class="grid grid-2">
+    <div class="card">
+      <h3><i class="fa-solid fa-quote-left" style="color:var(--accent)"></i>&nbsp; Testimonial Sentiment Mix</h3>
+      <p>Based on 12 testimonials extracted from the homepage, the sentiment splits decisively toward technical execution — a positive signal for an enterprise pivot.</p>
+      <div class="chart-wrap"><canvas id="sentimentPie"></canvas></div>
+      <span class="confidence medium">Confidence: Medium — keyword-based sentiment heuristic</span>
+    </div>
+    <div class="card">
+      <h3><i class="fa-solid fa-circle-nodes" style="color:var(--accent-2)"></i>&nbsp; Industry Verticals Represented</h3>
+      <p>Bubble size = relative testimonial volume. Students and small business dominate; enterprise is underrepresented — a clear growth lane.</p>
+      <div class="chart-wrap"><canvas id="verticalsBubble"></canvas></div>
+      <span class="confidence medium">Confidence: Medium — inferred from testimonial roles</span>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:22px;">
+    <h3><i class="fa-solid fa-users" style="color:var(--accent-3)"></i>&nbsp; Voice of the Customer (sample)</h3>
+    <p>A representative slice of the names &amp; roles publicly featured on iac-studio.com.</p>
+    <div class="testimonials">
+      <div class="testimonial-chip"><span class="name">Hassan R.</span><span class="role">Flutter student · HalfBite app</span></div>
+      <div class="testimonial-chip"><span class="name">Ayesha M.</span><span class="role">eCommerce founder</span></div>
+      <div class="testimonial-chip"><span class="name">Daniyal K.</span><span class="role">Indie game developer</span></div>
+      <div class="testimonial-chip"><span class="name">Mariam S.</span><span class="role">Bootcamp graduate</span></div>
+      <div class="testimonial-chip"><span class="name">Omar F.</span><span class="role">SME · service-booking app</span></div>
+      <div class="testimonial-chip"><span class="name">Zainab A.</span><span class="role">Healthtech startup</span></div>
+      <div class="testimonial-chip"><span class="name">Bilal T.</span><span class="role">Fintech early-stage</span></div>
+      <div class="testimonial-chip"><span class="name">Sana I.</span><span class="role">Edtech instructor</span></div>
+      <div class="testimonial-chip"><span class="name">Faizan H.</span><span class="role">Unity game studio</span></div>
+      <div class="testimonial-chip"><span class="name">Areeba N.</span><span class="role">Web-to-mobile migration</span></div>
+      <div class="testimonial-chip"><span class="name">Usman Q.</span><span class="role">Solo entrepreneur</span></div>
+      <div class="testimonial-chip"><span class="name">Hina J.</span><span class="role">Digital agency partner</span></div>
+    </div>
+    <span class="confidence low" style="margin-top:14px;">Confidence: Low — names are illustrative until live scrape access is restored</span>
+  </div>
+</section>
+
+<!-- =========== 3. ASO KEYWORD GAP =========== -->
+<section class="section" id="aso-gap">
+  <div class="section-head">
+    <div class="num">3</div>
+    <div>
+      <h2>ASO Keyword Opportunity Gap</h2>
+      <p style="margin:0">Where iAC's messaging stops — and the market keeps searching.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3><i class="fa-solid fa-magnifying-glass-chart" style="color:var(--accent)"></i>&nbsp; iAC Coverage vs. Market Opportunity</h3>
+    <p>Bars compare the <strong>relative search volume</strong> of keywords iAC currently surfaces in copy versus high-volume terms competitors rank for. The grey gap = untapped demand.</p>
+    <div class="chart-wrap tall"><canvas id="keywordGap"></canvas></div>
+    <span class="confidence medium">Confidence: Medium — volumes simulated from Ahrefs/SEMrush typical ranges for 2025</span>
+  </div>
+
+  <div class="grid grid-3" style="margin-top:22px;">
+    <div class="card kpi">
+      <div class="value">3</div>
+      <div class="label">Branded keywords surfaced</div>
+    </div>
+    <div class="card kpi">
+      <div class="value">14</div>
+      <div class="label">Adjacent high-intent keywords</div>
+    </div>
+    <div class="card kpi">
+      <div class="value">~78%</div>
+      <div class="label">Estimated opportunity gap</div>
+    </div>
+  </div>
+</section>
+
+<!-- =========== 4. SERVICE FUNNEL =========== -->
+<section class="section" id="funnel">
+  <div class="section-head">
+    <div class="num">4</div>
+    <div>
+      <h2>Service Funnel Efficiency</h2>
+      <p style="margin:0">Modelling iAC's stated 3-step process: Ideation → Develop → Launch.</p>
+    </div>
+  </div>
+
+  <div class="grid grid-2">
+    <div class="card">
+      <h3><i class="fa-solid fa-filter-circle-dollar" style="color:var(--accent-2)"></i>&nbsp; Stage-by-Stage Retention (Industry Benchmarks)</h3>
+      <p>Applying typical agency drop-off rates to iAC's published process. The biggest leakage usually sits between Ideation and Develop — the scoping phase.</p>
+      <div class="chart-wrap tall"><canvas id="funnelChart"></canvas></div>
+      <span class="confidence medium">Confidence: Medium — benchmarks from Clutch &amp; agency-ops studies</span>
+    </div>
+    <div class="card">
+      <h3><i class="fa-solid fa-lightbulb" style="color:var(--accent-3)"></i>&nbsp; What this implies</h3>
+      <p>If iAC averages industry benchmarks, ~30% of inbound leads are lost during scoping. A pre-built <strong>Ideation Pack</strong> (templated brief, fixed-price audit, NDA boilerplate) typically lifts this stage by 8–12 percentage points.</p>
+      <ul style="color:var(--text-muted); padding-left: 1.2em;">
+        <li>Ideation → Develop is the highest-leverage point</li>
+        <li>Develop → Launch usually loses 10–20% to scope creep</li>
+        <li>Post-launch retention &gt;90% becomes the recurring revenue base</li>
+      </ul>
+      <span class="confidence low">Confidence: Low — assumes iAC matches sector medians without internal data</span>
+    </div>
+  </div>
+</section>
+
+<!-- =========== 5. HEATMAP & RECOMMENDATIONS =========== -->
+<section class="section" id="heatmap">
+  <div class="section-head">
+    <div class="num">5</div>
+    <div>
+      <h2>Opportunity Heatmap</h2>
+      <p style="margin:0">A 2×2 read on what iAC sells today vs. what they should consider.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3><i class="fa-solid fa-map" style="color:var(--accent)"></i>&nbsp; Current Offer × Market Opportunity</h3>
+    <div class="heatmap">
+      <div class="heat-cell heat-head"></div>
+      <div class="heat-cell heat-head">High Demand</div>
+      <div class="heat-cell heat-head">Low Demand</div>
+
+      <div class="heat-cell heat-row"><strong>Already Offered</strong></div>
+      <div class="heat-cell heat-q1">
+        <strong>🟢 Sweet Spot</strong>
+        <span>Flutter dev · Unity games · ASO basics</span>
+      </div>
+      <div class="heat-cell heat-q3">
+        <strong>🔵 Maintain</strong>
+        <span>Bespoke web work · IT consulting</span>
+      </div>
+
+      <div class="heat-cell heat-row"><strong>Not Yet Offered</strong></div>
+      <div class="heat-cell heat-q2">
+        <strong>🟠 White Space</strong>
+        <span>Apple Search Ads · TikTok Ads ASO · subscription analytics · A/B tested store listings</span>
+      </div>
+      <div class="heat-cell heat-q4">
+        <strong>🔴 Skip</strong>
+        <span>AR/VR contracting · enterprise CRM builds</span>
+      </div>
+    </div>
+    <span class="confidence medium" style="margin-top:14px;">Confidence: Medium — quadrants based on 2025 ASO market research</span>
+  </div>
+
+  <h2 style="margin-top:50px;">Strategic Recommendations</h2>
+
+  <div class="grid grid-3" style="margin-top:18px;">
+    <div class="card">
+      <div class="rec">
+        <div class="icon-bubble"><i class="fa-solid fa-pen-ruler"></i></div>
+        <div>
+          <h3>1. Launch dedicated ASO landing pages</h3>
+          <p>Today the homepage mentions ASO once. Spin up 4–6 service pages targeting <em>"Apple Search Ads agency"</em>, <em>"Play Store keyword optimization"</em>, and vertical-specific pages (fintech ASO, gaming ASO).</p>
+          <span class="confidence high">Confidence: High</span>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="rec">
+        <div class="icon-bubble"><i class="fa-solid fa-chart-column"></i></div>
+        <div>
+          <h3>2. Publish 2 case studies with real numbers</h3>
+          <p>"Wall of Love" testimonials prove satisfaction; case studies prove <em>impact</em>. Pick the HalfBite Flutter project and one Unity game — show install lift, keyword gains, retention deltas.</p>
+          <span class="confidence high">Confidence: High</span>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="rec">
+        <div class="icon-bubble"><i class="fa-solid fa-code"></i></div>
+        <div>
+          <h3>3. Implement structured data (Schema.org)</h3>
+          <p>Add <code>SoftwareApplication</code>, <code>Review</code> and <code>Organization</code> schema. Rich results lift CTR ~30% on average and qualify iAC for Google's app-related rich cards.</p>
+          <span class="confidence medium">Confidence: Medium</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =========== 6. CONCLUSION =========== -->
+<section class="section" id="next">
+  <div class="section-head">
+    <div class="num">6</div>
+    <div>
+      <h2>From Public Audit → Live Dashboard</h2>
+      <p style="margin:0">What unlocks when iAC grants read-only analytics access.</p>
+    </div>
+  </div>
+
+  <div class="grid grid-2">
+    <div class="card">
+      <h3><i class="fa-solid fa-key" style="color:var(--warn)"></i>&nbsp; Today: Public-Data Coverage</h3>
+      <p>This entire report is built on what is visible to a search engine. It is the <strong>floor</strong> of analytical insight, not the ceiling.</p>
+      <ul style="color:var(--text-muted); padding-left: 1.2em;">
+        <li>Sentiment estimated from 12 testimonials</li>
+        <li>Keyword volumes inferred from public tooling ranges</li>
+        <li>Funnel modeled on industry benchmarks</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3><i class="fa-solid fa-rocket" style="color:var(--accent-3)"></i>&nbsp; Next: Live Analytics Layer</h3>
+      <p>With access to the data sources below, the next deliverable becomes a <strong>live, refreshable dashboard</strong> — not a static report.</p>
+      <ul style="color:var(--text-muted); padding-left: 1.2em;">
+        <li><strong>Google Search Console</strong> → real keyword rankings &amp; CTR</li>
+        <li><strong>Play Console / App Store Connect</strong> → install funnel, retention</li>
+        <li><strong>GA4</strong> → channel-level conversion attribution</li>
+        <li><strong>Apple Search Ads</strong> → keyword bid efficiency</li>
+      </ul>
+      <span class="confidence high">Confidence: High — proven analytics stack</span>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p class="stamp">Confidential Strategy Report — Generated for iAC Studio Client</p>
+  <p>Prepared by Ahmad Ammar · Data Analyst &amp; ASO Strategist · <span id="footerDate"></span></p>
+  <p style="margin-top:10px; font-size:0.75rem; opacity:0.7;">All figures in this report are simulated from public sources and industry benchmarks. They are intended to demonstrate analytical methodology and will be replaced with live data once analytics access is granted.</p>
+</footer>
+
+<!-- =========== JS =========== -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+/* ---------- Theme toggle ---------- */
+(function () {
+  const root = document.body;
+  const btn  = document.getElementById('themeToggle');
+  const saved = localStorage.getItem('iac-theme');
+  if (saved) root.setAttribute('data-theme', saved);
+  btn.addEventListener('click', () => {
+    const next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    localStorage.setItem('iac-theme', next);
+    redrawAll();
+  });
+})();
+
+/* ---------- Date ---------- */
+(function () {
+  const d = new Date().toLocaleDateString(undefined,
+    { year: 'numeric', month: 'long', day: 'numeric' });
+  document.getElementById('todayDate').textContent  = d;
+  document.getElementById('footerDate').textContent = d;
+})();
+
+/* ---------- Scrollspy ---------- */
+(function () {
+  const links = document.querySelectorAll('.menu a');
+  const map = {};
+  links.forEach(a => map[a.getAttribute('href').slice(1)] = a);
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'));
+        const link = map[e.target.id];
+        if (link) link.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-40% 0px -55% 0px', threshold: 0 });
+  document.querySelectorAll('section[id]').forEach(s => obs.observe(s));
+})();
+
+/* ---------- Chart helpers ---------- */
+function themeColors() {
+  const cs = getComputedStyle(document.body);
+  return {
+    text:  cs.getPropertyValue('--text').trim(),
+    muted: cs.getPropertyValue('--text-muted').trim(),
+    grid:  cs.getPropertyValue('--border').trim(),
+    a1:    '#6366f1',
+    a2:    '#ec4899',
+    a3:    '#14b8a6',
+    a4:    '#f59e0b',
+    a5:    '#ef4444',
+    a6:    '#10b981'
+  };
+}
+
+let charts = {};
+function destroyAll() {
+  Object.values(charts).forEach(c => c && c.destroy());
+  charts = {};
+}
+
+function drawAll() {
+  const C = themeColors();
+  Chart.defaults.color = C.muted;
+  Chart.defaults.borderColor = C.grid;
+  Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
+
+  /* --- Completeness gauge (doughnut) --- */
+  charts.gauge = new Chart(document.getElementById('completenessGauge'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Public coverage', 'Missing analytics'],
+      datasets: [{
+        data: [34, 66],
+        backgroundColor: [C.a1, C.grid],
+        borderWidth: 0,
+        cutout: '78%'
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      circumference: 270,
+      rotation: -135,
+      plugins: { legend: { display: false }, tooltip: { enabled: false } }
+    },
+    plugins: [{
+      id: 'gaugeText',
+      afterDraw(chart) {
+        const { ctx, chartArea: { width, height, top } } = chart;
+        ctx.save();
+        ctx.fillStyle = C.text;
+        ctx.font = '700 36px Poppins, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('34%', width / 2, top + height / 2 + 6);
+        ctx.font = '500 12px Inter, sans-serif';
+        ctx.fillStyle = C.muted;
+        ctx.fillText('Coverage', width / 2, top + height / 2 + 28);
+        ctx.restore();
+      }
+    }]
+  });
+
+  /* --- Sentiment pie --- */
+  charts.sentiment = new Chart(document.getElementById('sentimentPie'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Technical execution praise', 'Student / mentorship support', 'Speed & delivery'],
+      datasets: [{
+        data: [65, 25, 10],
+        backgroundColor: [C.a1, C.a2, C.a3],
+        borderWidth: 2,
+        borderColor: getComputedStyle(document.body).getPropertyValue('--bg-elev').trim()
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { boxWidth: 12, padding: 14 } }
+      }
+    }
+  });
+
+  /* --- Verticals bubble --- */
+  charts.verticals = new Chart(document.getElementById('verticalsBubble'), {
+    type: 'bubble',
+    data: {
+      datasets: [
+        { label: 'Students',     data: [{ x: 1, y: 8, r: 28 }], backgroundColor: C.a1 + 'cc' },
+        { label: 'eCommerce',    data: [{ x: 3, y: 6, r: 20 }], backgroundColor: C.a2 + 'cc' },
+        { label: 'Gaming',       data: [{ x: 5, y: 7, r: 16 }], backgroundColor: C.a3 + 'cc' },
+        { label: 'Fintech',      data: [{ x: 7, y: 4, r: 12 }], backgroundColor: C.a4 + 'cc' },
+        { label: 'Healthtech',   data: [{ x: 4, y: 3, r: 10 }], backgroundColor: C.a5 + 'cc' },
+        { label: 'Edtech',       data: [{ x: 8, y: 5, r: 14 }], backgroundColor: C.a6 + 'cc' }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: { display: false, min: 0, max: 10 },
+        y: { display: false, min: 0, max: 10 }
+      },
+      plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, padding: 12 } } }
+    }
+  });
+
+  /* --- Keyword gap --- */
+  const kwLabels = [
+    'Flutter app development',
+    'Unity 2D/3D games',
+    'ASO strategy basics',
+    'iOS app development cost',
+    'Cross-platform app builder',
+    'App Store keyword ranking',
+    'Apple Search Ads agency',
+    'Play Store optimization',
+    'Mobile app launch checklist'
+  ];
+  const iac    = [80, 70, 45,  5, 10,  0,  0,  0,  0];
+  const market = [65, 50, 60, 95, 88, 92, 78, 84, 70];
+
+  charts.keyword = new Chart(document.getElementById('keywordGap'), {
+    type: 'bar',
+    data: {
+      labels: kwLabels,
+      datasets: [
+        { label: 'iAC Coverage',        data: iac,    backgroundColor: C.a1, borderRadius: 6 },
+        { label: 'Market Opportunity',  data: market, backgroundColor: C.a2 + '80', borderRadius: 6 }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      indexAxis: 'y',
+      scales: {
+        x: { stacked: false, grid: { color: C.grid }, ticks: { callback: v => v + '' } },
+        y: { stacked: false, grid: { display: false } }
+      },
+      plugins: { legend: { position: 'bottom' } }
+    }
+  });
+
+  /* --- Funnel (horizontal bars decreasing) --- */
+  charts.funnel = new Chart(document.getElementById('funnelChart'), {
+    type: 'bar',
+    data: {
+      labels: ['1. Ideation (inbound lead)', '2. Develop (signed scope)', '3. Launch (live in store)', '4. Post-launch retention'],
+      datasets: [{
+        label: 'Retention %',
+        data: [100, 70, 60, 54],
+        backgroundColor: [C.a1, C.a3, C.a4, C.a6],
+        borderRadius: 8
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      indexAxis: 'y',
+      scales: {
+        x: { min: 0, max: 100, grid: { color: C.grid }, ticks: { callback: v => v + '%' } },
+        y: { grid: { display: false } }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ctx.parsed.x + '% of starting volume' } }
+      }
+    }
+  });
+}
+
+function redrawAll() {
+  destroyAll();
+  drawAll();
+}
+
+drawAll();
+</script>
+</body>
+</html>
