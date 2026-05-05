@@ -1,0 +1,539 @@
+---
+title: "iAC Studio — Website Performance & SEO Audit"
+subtitle: "Live data analysis of iac-studio.com"
+author: "Ahmad Ammar — Data Analyst"
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 3
+    theme: cosmo
+    highlight: tango
+    code_folding: hide
+    df_print: paged
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  warning = FALSE,
+  message = FALSE,
+  fig.align = "center",
+  fig.width = 9,
+  fig.height = 5
+)
+
+library(tidyverse)
+library(httr)
+library(jsonlite)
+library(rvest)
+library(xml2)
+library(knitr)
+library(kableExtra)
+library(scales)
+
+# ---- CONFIG ----
+TARGET_URL    <- "https://iac-studio.com/"
+EXTRA_PAGES   <- c("https://iac-studio.com/our-services/")
+USER_AGENT    <- "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
+PSI_ENDPOINT  <- "https://www.googleapis.com/pagespeedonline/v5/runPagespeed"
+
+`%||%` <- function(a, b) if (is.null(a) || length(a) == 0 || (length(a) == 1 && is.na(a))) b else a
+
+style_table <- function(df, caption = NULL) {
+  kable(df, caption = caption) %>%
+    kable_styling(
+      bootstrap_options = c("striped", "hover", "condensed", "responsive"),
+      full_width = TRUE,
+      position = "left"
+    )
+}
+```
+
+# Executive Summary
+
+This report is a **live, data-driven audit** of `r TARGET_URL`. Every metric below is fetched in real time when this report is generated — from Google's PageSpeed Insights API, from the live HTML of the site, and from the network response headers returned by the iAC Studio servers.
+
+The goal: identify exactly where the site is losing visitors, search rankings, or load speed — and give iAC Studio a prioritized action list to fix it.
+
+**Report generated on:** `r format(Sys.time(), '%Y-%m-%d %H:%M:%S %Z')`
+
+---
+
+# Methodology
+
+| Data Source | What it tells us | Real-time? |
+|---|---|---|
+| Google PageSpeed Insights API | Performance score, Core Web Vitals, accessibility, SEO, best practices | Yes — fetched live |
+| Live HTML scrape (`rvest`) | Title tags, meta descriptions, headings, links, images, alt text | Yes — fetched live |
+| HTTP response headers | Server tech, security headers, caching, compression | Yes — fetched live |
+| Site structure crawl | Internal vs external links, page weight | Yes — fetched live |
+
+> **Note for the client:** This audit uses *publicly available* data only. A deeper engagement — with access to your Google Analytics, Google Search Console, and App Store / Play Console — would unlock visitor behavior, conversion funnels, keyword rankings and install attribution data, which can multiply the actionable insight in this report.
+
+---
+
+# 1. Live Page Performance (Google PageSpeed Insights)
+
+```{r psi-fetch}
+fetch_psi <- function(url, strategy = "mobile") {
+  q <- paste0(
+    PSI_ENDPOINT,
+    "?url=", URLencode(url, reserved = TRUE),
+    "&strategy=", strategy,
+    "&category=performance",
+    "&category=seo",
+    "&category=accessibility",
+    "&category=best-practices"
+  )
+  resp <- tryCatch(GET(q, timeout(60)), error = function(e) NULL)
+  if (is.null(resp) || http_error(resp)) return(NULL)
+  content(resp, as = "parsed", type = "application/json")
+}
+
+psi_mobile  <- fetch_psi(TARGET_URL, "mobile")
+psi_desktop <- fetch_psi(TARGET_URL, "desktop")
+
+extract_scores <- function(psi, label) {
+  if (is.null(psi)) return(NULL)
+  cats <- psi$lighthouseResult$categories
+  tibble(
+    Strategy      = label,
+    Performance   = round(cats$performance$score * 100),
+    SEO           = round(cats$seo$score * 100),
+    Accessibility = round(cats$accessibility$score * 100),
+    `Best Practices` = round(cats$`best-practices`$score * 100)
+  )
+}
+
+scores <- bind_rows(
+  extract_scores(psi_mobile,  "Mobile"),
+  extract_scores(psi_desktop, "Desktop")
+)
+```
+
+```{r psi-table}
+if (nrow(scores) > 0) {
+  style_table(scores, caption = "Lighthouse scores (0–100) — live from Google PageSpeed Insights")
+} else {
+  cat("PageSpeed Insights API did not return data. Check internet connection and try again.")
+}
+```
+
+```{r psi-chart, fig.height=4}
+if (nrow(scores) > 0) {
+  scores %>%
+    pivot_longer(-Strategy, names_to = "Category", values_to = "Score") %>%
+    ggplot(aes(x = Category, y = Score, fill = Strategy)) +
+    geom_col(position = position_dodge(width = 0.8), width = 0.7) +
+    geom_text(aes(label = Score),
+              position = position_dodge(width = 0.8),
+              vjust = -0.4, size = 4, fontface = "bold") +
+    geom_hline(yintercept = 90, linetype = "dashed", color = "darkgreen") +
+    geom_hline(yintercept = 50, linetype = "dashed", color = "orange") +
+    scale_fill_manual(values = c("Mobile" = "#2E86AB", "Desktop" = "#A23B72")) +
+    scale_y_continuous(limits = c(0, 110), breaks = seq(0, 100, 25)) +
+    labs(
+      title = "Lighthouse Scores: Mobile vs Desktop",
+      subtitle = "Green line = 'Good' (≥90). Orange line = 'Needs Improvement' (≥50).",
+      x = NULL, y = "Score (0–100)"
+    ) +
+    theme_minimal(base_size = 12) +
+    theme(legend.position = "top",
+          plot.title = element_text(face = "bold"))
+}
+```
+
+## Core Web Vitals (Mobile)
+
+These are the three metrics Google uses for ranking:
+
+```{r core-web-vitals}
+extract_cwv <- function(psi) {
+  if (is.null(psi)) return(NULL)
+  audits <- psi$lighthouseResult$audits
+  tibble(
+    Metric = c("Largest Contentful Paint (LCP)",
+               "Total Blocking Time (TBT)",
+               "Cumulative Layout Shift (CLS)",
+               "First Contentful Paint (FCP)",
+               "Speed Index"),
+    Value = c(
+      audits$`largest-contentful-paint`$displayValue %||% NA,
+      audits$`total-blocking-time`$displayValue       %||% NA,
+      audits$`cumulative-layout-shift`$displayValue   %||% NA,
+      audits$`first-contentful-paint`$displayValue    %||% NA,
+      audits$`speed-index`$displayValue               %||% NA
+    ),
+    Score = c(
+      round((audits$`largest-contentful-paint`$score %||% NA) * 100),
+      round((audits$`total-blocking-time`$score       %||% NA) * 100),
+      round((audits$`cumulative-layout-shift`$score   %||% NA) * 100),
+      round((audits$`first-contentful-paint`$score    %||% NA) * 100),
+      round((audits$`speed-index`$score               %||% NA) * 100)
+    )
+  )
+}
+
+cwv <- extract_cwv(psi_mobile)
+if (!is.null(cwv)) {
+  style_table(cwv, caption = "Core Web Vitals (mobile) — live from PSI")
+}
+```
+
+---
+
+# 2. On-Page SEO Audit (Live HTML Scrape)
+
+```{r scrape-page}
+fetch_html <- function(url) {
+  resp <- tryCatch(
+    GET(url, user_agent(USER_AGENT), timeout(30)),
+    error = function(e) NULL
+  )
+  if (is.null(resp) || http_error(resp)) return(NULL)
+  list(
+    response = resp,
+    html     = read_html(content(resp, as = "text", encoding = "UTF-8"))
+  )
+}
+
+page <- fetch_html(TARGET_URL)
+```
+
+```{r seo-extract}
+seo_summary <- function(page, url) {
+  if (is.null(page)) {
+    return(tibble(Field = "Status", Value = "Could not fetch page"))
+  }
+  doc <- page$html
+  title    <- doc %>% html_element("title") %>% html_text(trim = TRUE)
+  meta_desc <- doc %>% html_element("meta[name='description']") %>% html_attr("content")
+  meta_kw   <- doc %>% html_element("meta[name='keywords']") %>% html_attr("content")
+  canonical <- doc %>% html_element("link[rel='canonical']") %>% html_attr("href")
+  og_title  <- doc %>% html_element("meta[property='og:title']") %>% html_attr("content")
+  og_image  <- doc %>% html_element("meta[property='og:image']") %>% html_attr("content")
+  viewport  <- doc %>% html_element("meta[name='viewport']") %>% html_attr("content")
+  robots    <- doc %>% html_element("meta[name='robots']") %>% html_attr("content")
+
+  flag <- function(x, good_min = 1, good_max = Inf) {
+    if (is.na(x) || x == "") return("Missing")
+    n <- nchar(x)
+    if (n < good_min) return(paste0("Too short (", n, " chars)"))
+    if (n > good_max) return(paste0("Too long (", n, " chars)"))
+    paste0("OK (", n, " chars)")
+  }
+
+  tibble(
+    Field = c("URL", "Title Tag", "Title length status",
+              "Meta Description", "Meta Description status",
+              "Meta Keywords", "Canonical URL",
+              "Open Graph Title", "Open Graph Image",
+              "Viewport (mobile)", "Robots directive"),
+    Value = c(
+      url,
+      title %||% "Missing",
+      flag(title, 30, 60),
+      meta_desc %||% "Missing",
+      flag(meta_desc, 70, 160),
+      meta_kw %||% "Missing",
+      canonical %||% "Missing",
+      og_title %||% "Missing",
+      og_image %||% "Missing",
+      viewport %||% "Missing",
+      robots %||% "Not set (defaults to index, follow)"
+    )
+  )
+}
+
+seo_tbl <- seo_summary(page, TARGET_URL)
+style_table(seo_tbl, caption = "On-page SEO snapshot (live from iac-studio.com)")
+```
+
+## Heading Structure (H1 → H6)
+
+```{r headings}
+heading_audit <- function(page) {
+  if (is.null(page)) return(tibble())
+  map_dfr(1:6, function(i) {
+    nodes <- page$html %>% html_elements(paste0("h", i)) %>% html_text(trim = TRUE)
+    tibble(Level = paste0("H", i), Count = length(nodes),
+           Examples = paste(head(nodes, 3), collapse = " | "))
+  })
+}
+
+h_tbl <- heading_audit(page)
+if (nrow(h_tbl) > 0) {
+  style_table(h_tbl, caption = "Heading distribution and examples")
+
+  ggplot(h_tbl, aes(x = Level, y = Count, fill = Level)) +
+    geom_col() +
+    geom_text(aes(label = Count), vjust = -0.4, fontface = "bold") +
+    scale_fill_brewer(palette = "Blues") +
+    labs(title = "Heading Tag Distribution", x = NULL, y = "Count") +
+    theme_minimal(base_size = 12) +
+    theme(legend.position = "none")
+}
+```
+
+> **SEO rule of thumb:** A page should have **exactly one H1**, a logical descending hierarchy (don't skip from H1 to H4), and headings that include relevant keywords.
+
+---
+
+# 3. Content & Link Profile
+
+```{r content-stats}
+content_stats <- function(page, url) {
+  if (is.null(page)) return(NULL)
+  doc <- page$html
+  body_text <- doc %>% html_element("body") %>% html_text(trim = TRUE)
+  words <- str_split(body_text, "\\s+")[[1]]
+  words <- words[nchar(words) > 0]
+
+  links <- doc %>% html_elements("a") %>% html_attr("href")
+  links <- links[!is.na(links) & links != "" & !str_starts(links, "#") & !str_starts(links, "javascript:")]
+  domain <- httr::parse_url(url)$hostname
+  is_internal <- str_detect(links, fixed(domain)) | str_starts(links, "/")
+
+  imgs <- doc %>% html_elements("img")
+  alt_texts <- imgs %>% html_attr("alt")
+  imgs_missing_alt <- sum(is.na(alt_texts) | alt_texts == "")
+
+  tibble(
+    Metric = c("Total word count",
+               "Total links",
+               "Internal links",
+               "External links",
+               "Total images",
+               "Images missing alt text",
+               "Alt-text coverage"),
+    Value = c(
+      comma(length(words)),
+      comma(length(links)),
+      comma(sum(is_internal)),
+      comma(sum(!is_internal)),
+      comma(length(imgs)),
+      comma(imgs_missing_alt),
+      ifelse(length(imgs) > 0,
+             percent(1 - imgs_missing_alt / length(imgs), accuracy = 0.1),
+             "n/a")
+    )
+  )
+}
+
+cs <- content_stats(page, TARGET_URL)
+if (!is.null(cs)) style_table(cs, caption = "Content & link profile (live)")
+```
+
+---
+
+# 4. Server, Security & Tech Stack
+
+```{r security-headers}
+security_audit <- function(page) {
+  if (is.null(page)) return(NULL)
+  h <- headers(page$response)
+  check <- function(name, recommended = "Set any value") {
+    val <- h[[tolower(name)]]
+    tibble(
+      Header = name,
+      Status = ifelse(is.null(val), "MISSING", "PRESENT"),
+      Value  = ifelse(is.null(val), paste("⚠️", recommended), substr(val, 1, 80))
+    )
+  }
+
+  bind_rows(
+    check("Strict-Transport-Security", "Add HSTS to enforce HTTPS"),
+    check("Content-Security-Policy",   "Add CSP to prevent XSS"),
+    check("X-Frame-Options",           "Add to prevent clickjacking"),
+    check("X-Content-Type-Options",    "Add 'nosniff' to prevent MIME-type sniffing"),
+    check("Referrer-Policy",           "Recommend 'strict-origin-when-cross-origin'"),
+    check("Permissions-Policy",        "Restrict browser features"),
+    check("Server",                    "Server software"),
+    check("Content-Encoding",          "gzip/br compression saves bandwidth")
+  )
+}
+
+sec <- security_audit(page)
+if (!is.null(sec)) style_table(sec, caption = "Security & server response headers")
+```
+
+```{r tech-detect}
+detect_tech <- function(page) {
+  if (is.null(page)) return(NULL)
+  doc <- page$html
+  raw <- as.character(doc)
+
+  signals <- c(
+    "WordPress"   = "wp-content|wp-includes|/wp-json/",
+    "WooCommerce" = "woocommerce",
+    "Elementor"   = "elementor",
+    "jQuery"      = "jquery",
+    "Bootstrap"   = "bootstrap",
+    "Google Analytics 4" = "gtag\\(|G-[A-Z0-9]{8,}",
+    "Google Tag Manager" = "googletagmanager.com/gtm.js",
+    "Facebook Pixel"     = "connect.facebook.net.*fbevents",
+    "Cloudflare"         = "cloudflare",
+    "reCAPTCHA"          = "google.com/recaptcha"
+  )
+
+  tibble(
+    Technology = names(signals),
+    Detected = sapply(signals, function(p) ifelse(str_detect(raw, regex(p, ignore_case = TRUE)), "Yes", "No"))
+  )
+}
+
+tech <- detect_tech(page)
+if (!is.null(tech)) style_table(tech, caption = "Technology fingerprint (best-effort detection)")
+```
+
+---
+
+# 5. Multi-Page Comparison
+
+```{r multipage}
+all_pages <- c(TARGET_URL, EXTRA_PAGES)
+
+page_metrics <- map_dfr(all_pages, function(u) {
+  p <- fetch_html(u)
+  if (is.null(p)) {
+    return(tibble(URL = u, Title = "FETCH FAILED", `Title len` = NA,
+                  `Meta desc len` = NA, `H1 count` = NA, Words = NA, Links = NA, Images = NA))
+  }
+  doc <- p$html
+  title <- doc %>% html_element("title") %>% html_text(trim = TRUE)
+  desc  <- doc %>% html_element("meta[name='description']") %>% html_attr("content")
+  h1s   <- doc %>% html_elements("h1") %>% length()
+  body  <- doc %>% html_element("body") %>% html_text(trim = TRUE)
+  words <- length(str_split(body, "\\s+")[[1]])
+  links <- doc %>% html_elements("a") %>% length()
+  imgs  <- doc %>% html_elements("img") %>% length()
+
+  tibble(
+    URL           = u,
+    Title         = ifelse(is.na(title), "Missing", substr(title, 1, 50)),
+    `Title len`   = nchar(title %||% ""),
+    `Meta desc len` = nchar(desc %||% ""),
+    `H1 count`    = h1s,
+    Words         = words,
+    Links         = links,
+    Images        = imgs
+  )
+})
+
+style_table(page_metrics, caption = "Page-by-page snapshot (live)")
+```
+
+---
+
+# 6. Prioritized Recommendations
+
+```{r recommendations}
+recommendations <- function(scores, cwv, seo_tbl, sec, cs) {
+  recs <- list()
+
+  # Performance
+  if (!is.null(scores) && nrow(scores) > 0) {
+    mob_perf <- scores$Performance[scores$Strategy == "Mobile"]
+    if (length(mob_perf) > 0 && !is.na(mob_perf) && mob_perf < 90) {
+      sev <- if (mob_perf < 50) "HIGH" else "MEDIUM"
+      recs[[length(recs) + 1]] <- tibble(
+        Priority = sev, Area = "Performance",
+        Finding = paste0("Mobile performance score is ", mob_perf, "/100."),
+        Action = "Compress and lazy-load images, defer non-critical JS, enable browser caching, use a CDN."
+      )
+    }
+  }
+
+  # Meta description
+  meta_status <- seo_tbl$Value[seo_tbl$Field == "Meta Description status"]
+  if (length(meta_status) > 0 && (str_detect(meta_status, "Missing|Too"))) {
+    recs[[length(recs) + 1]] <- tibble(
+      Priority = "HIGH", Area = "SEO",
+      Finding = paste("Meta description issue:", meta_status),
+      Action = "Write a compelling 120–155 character meta description with primary keyword + value proposition."
+    )
+  }
+
+  # Title tag
+  title_status <- seo_tbl$Value[seo_tbl$Field == "Title length status"]
+  if (length(title_status) > 0 && str_detect(title_status, "Missing|Too")) {
+    recs[[length(recs) + 1]] <- tibble(
+      Priority = "HIGH", Area = "SEO",
+      Finding = paste("Title tag issue:", title_status),
+      Action = "Rewrite title to 50–60 characters including main service keyword (e.g. 'Mobile App Development')."
+    )
+  }
+
+  # Security headers
+  if (!is.null(sec)) {
+    missing_sec <- sec %>% filter(Status == "MISSING", Header != "Server")
+    if (nrow(missing_sec) > 0) {
+      recs[[length(recs) + 1]] <- tibble(
+        Priority = "MEDIUM", Area = "Security",
+        Finding = paste(nrow(missing_sec), "security headers missing:",
+                        paste(missing_sec$Header, collapse = ", ")),
+        Action = "Configure security headers via .htaccess or web server config to improve trust signals & ranking."
+      )
+    }
+  }
+
+  # Image alt text
+  if (!is.null(cs)) {
+    alt_row <- cs$Value[cs$Metric == "Images missing alt text"]
+    if (length(alt_row) > 0 && as.numeric(gsub(",", "", alt_row)) > 0) {
+      recs[[length(recs) + 1]] <- tibble(
+        Priority = "MEDIUM", Area = "Accessibility / SEO",
+        Finding = paste(alt_row, "images are missing alt text."),
+        Action = "Add descriptive alt text to every <img> for accessibility and image-search rankings."
+      )
+    }
+  }
+
+  if (length(recs) == 0) {
+    return(tibble(Priority = "INFO", Area = "—",
+                  Finding = "No critical issues detected from public data.",
+                  Action = "Request analytics access for deeper behavioural analysis."))
+  }
+  bind_rows(recs) %>% arrange(factor(Priority, levels = c("HIGH", "MEDIUM", "LOW", "INFO")))
+}
+
+rec_tbl <- recommendations(scores, cwv, seo_tbl, sec, cs)
+
+rec_tbl %>%
+  kable(caption = "Prioritized action list") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = TRUE) %>%
+  column_spec(1, bold = TRUE,
+              color = "white",
+              background = case_when(
+                rec_tbl$Priority == "HIGH"   ~ "#C0392B",
+                rec_tbl$Priority == "MEDIUM" ~ "#E67E22",
+                rec_tbl$Priority == "LOW"    ~ "#27AE60",
+                TRUE                          ~ "#2980B9"
+              ))
+```
+
+---
+
+# 7. What's Next — Unlocking Real User Data
+
+This audit measured what is **publicly visible**. The next layer of analysis — the one that drives revenue decisions — needs access to your private data. With the following granted, the next report will include:
+
+| If you grant access to… | I can analyze… |
+|---|---|
+| **Google Analytics 4** | Real visitor counts, traffic sources, bounce rate, session duration, conversion funnels |
+| **Google Search Console** | Actual keyword rankings, click-through rates, impressions, indexing issues |
+| **Google Play Console / App Store Connect** | Install rate, retention curves, crash analytics, store impression-to-install funnel |
+| **Server / hosting access** | Log-level analysis of bots, security threats, slow endpoints |
+
+---
+
+```{r session-info, echo=FALSE}
+cat("Report rendered with R", R.version.string, "on", format(Sys.time(), "%Y-%m-%d %H:%M:%S %Z"))
+```
+
+---
+
+*Prepared by **Ahmad Ammar** — Data Analyst*
