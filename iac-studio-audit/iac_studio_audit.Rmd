@@ -40,19 +40,6 @@ EXTRA_PAGES   <- c("https://iac-studio.com/our-services/")
 USER_AGENT    <- "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
 PSI_ENDPOINT  <- "https://www.googleapis.com/pagespeedonline/v5/runPagespeed"
 
-# Manual fallback: if all online fetch attempts fail, the report will look for
-# saved HTML at this path. To use it, open TARGET_URL in your browser, choose
-# "Save Page As..." -> "Webpage, HTML Only", and save it as iac-studio.html
-# inside the iac-studio-audit/ folder.
-LOCAL_HTML_PATH <- "iac-studio.html"
-
-# Manual fallback for PageSpeed scores. If you can't reach the PSI API from R,
-# go to https://pagespeed.web.dev/, run an audit on TARGET_URL, then save the
-# JSON result (browser DevTools -> Network -> right-click on the runPagespeed
-# response -> "Save as..."). Save mobile + desktop runs to these paths:
-LOCAL_PSI_MOBILE_PATH  <- "psi-mobile.json"
-LOCAL_PSI_DESKTOP_PATH <- "psi-desktop.json"
-
 `%||%` <- function(a, b) if (is.null(a) || length(a) == 0 || (length(a) == 1 && is.na(a))) b else a
 
 style_table <- function(df, caption = NULL) {
@@ -62,27 +49,6 @@ style_table <- function(df, caption = NULL) {
       full_width = TRUE,
       position = "left"
     )
-}
-
-# Retry helper: attempts fn() up to `tries` times with exponential backoff.
-# Returns NULL on ultimate failure instead of stopping the report.
-with_retry <- function(fn, tries = 3, base_wait = 2) {
-  for (i in seq_len(tries)) {
-    out <- tryCatch(fn(), error = function(e) {
-      message(sprintf("Attempt %d/%d failed: %s", i, tries, e$message))
-      NULL
-    })
-    if (!is.null(out)) return(out)
-    if (i < tries) Sys.sleep(base_wait * (2 ^ (i - 1)))
-  }
-  NULL
-}
-
-notice <- function(msg) {
-  cat(sprintf(
-    "<div style='padding:12px;border-left:4px solid #E67E22;background:#FFF3E0;color:#7A4F01;border-radius:4px;'>%s</div>",
-    msg
-  ))
 }
 ```
 
@@ -111,8 +77,8 @@ The goal: identify exactly where the site is losing visitors, search rankings, o
 
 # 1. Live Page Performance (Google PageSpeed Insights)
 
-```{r psi-fetch, error=TRUE}
-fetch_psi_api <- function(url, strategy = "mobile") {
+```{r psi-fetch}
+fetch_psi <- function(url, strategy = "mobile") {
   q <- paste0(
     PSI_ENDPOINT,
     "?url=", URLencode(url, reserved = TRUE),
@@ -122,25 +88,13 @@ fetch_psi_api <- function(url, strategy = "mobile") {
     "&category=accessibility",
     "&category=best-practices"
   )
-  with_retry(function() {
-    resp <- GET(q, timeout(90))
-    if (http_error(resp)) stop("HTTP ", status_code(resp))
-    content(resp, as = "parsed", type = "application/json")
-  })
+  resp <- tryCatch(GET(q, timeout(60)), error = function(e) NULL)
+  if (is.null(resp) || http_error(resp)) return(NULL)
+  content(resp, as = "parsed", type = "application/json")
 }
 
-fetch_psi <- function(url, strategy, local_path) {
-  out <- fetch_psi_api(url, strategy)
-  if (!is.null(out)) return(out)
-  if (!is.null(local_path) && file.exists(local_path)) {
-    message("Loading PSI ", strategy, " result from local file: ", local_path)
-    return(jsonlite::fromJSON(local_path, simplifyVector = FALSE))
-  }
-  NULL
-}
-
-psi_mobile  <- fetch_psi(TARGET_URL, "mobile",  LOCAL_PSI_MOBILE_PATH)
-psi_desktop <- fetch_psi(TARGET_URL, "desktop", LOCAL_PSI_DESKTOP_PATH)
+psi_mobile  <- fetch_psi(TARGET_URL, "mobile")
+psi_desktop <- fetch_psi(TARGET_URL, "desktop")
 
 extract_scores <- function(psi, label) {
   if (is.null(psi)) return(NULL)
@@ -160,16 +114,16 @@ scores <- bind_rows(
 )
 ```
 
-```{r psi-table, results='asis'}
-if (!is.null(scores) && nrow(scores) > 0) {
-  print(style_table(scores, caption = "Lighthouse scores (0–100) — live from Google PageSpeed Insights"))
+```{r psi-table}
+if (nrow(scores) > 0) {
+  style_table(scores, caption = "Lighthouse scores (0–100) — live from Google PageSpeed Insights")
 } else {
-  notice("Google PageSpeed Insights API did not return data after 3 attempts. This usually means a temporary rate limit or network blip. Re-knit the report in 60 seconds, or set a free PSI API key in the setup chunk.")
+  cat("PageSpeed Insights API did not return data. Check internet connection and try again.")
 }
 ```
 
-```{r psi-chart, fig.height=4, error=TRUE}
-if (!is.null(scores) && nrow(scores) > 0) {
+```{r psi-chart, fig.height=4}
+if (nrow(scores) > 0) {
   scores %>%
     pivot_longer(-Strategy, names_to = "Category", values_to = "Score") %>%
     ggplot(aes(x = Category, y = Score, fill = Strategy)) +
@@ -233,90 +187,23 @@ if (!is.null(cwv)) {
 
 # 2. On-Page SEO Audit (Live HTML Scrape)
 
-```{r scrape-page, error=TRUE, results='asis'}
-# Strategy 1: direct fetch with full browser-style headers
-fetch_direct <- function(url) {
-  resp <- GET(
-    url,
-    user_agent(USER_AGENT),
-    add_headers(
-      `Accept`           = "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-      `Accept-Language`  = "en-US,en;q=0.9",
-      `Accept-Encoding`  = "gzip, deflate, br",
-      `Cache-Control`    = "no-cache",
-      `Pragma`           = "no-cache",
-      `Sec-Fetch-Dest`   = "document",
-      `Sec-Fetch-Mode`   = "navigate",
-      `Sec-Fetch-Site`   = "none",
-      `Sec-Fetch-User`   = "?1",
-      `Upgrade-Insecure-Requests` = "1"
-    ),
-    timeout(60)
+```{r scrape-page}
+fetch_html <- function(url) {
+  resp <- tryCatch(
+    GET(url, user_agent(USER_AGENT), timeout(30)),
+    error = function(e) NULL
   )
-  if (http_error(resp)) stop("HTTP ", status_code(resp))
-  body <- content(resp, as = "text", encoding = "UTF-8")
-  if (is.null(body) || nchar(body) < 100) stop("Empty or truncated response")
-  list(response = resp, html = read_html(body), source = "direct")
+  if (is.null(resp) || http_error(resp)) return(NULL)
+  list(
+    response = resp,
+    html     = read_html(content(resp, as = "text", encoding = "UTF-8"))
+  )
 }
 
-# Strategy 2: fetch the most recent Wayback Machine snapshot
-fetch_wayback <- function(url) {
-  api <- paste0("https://archive.org/wayback/available?url=",
-                URLencode(url, reserved = TRUE))
-  meta_resp <- GET(api, timeout(30))
-  if (http_error(meta_resp)) stop("Wayback API error ", status_code(meta_resp))
-  meta <- content(meta_resp, as = "parsed", type = "application/json")
-  snap_url <- meta$archived_snapshots$closest$url
-  if (is.null(snap_url)) stop("No Wayback snapshot available")
-  resp <- GET(snap_url, user_agent(USER_AGENT), timeout(60))
-  if (http_error(resp)) stop("Wayback fetch HTTP ", status_code(resp))
-  body <- content(resp, as = "text", encoding = "UTF-8")
-  list(response = resp, html = read_html(body), source = paste0("wayback (", snap_url, ")"))
-}
-
-# Strategy 3: load a manually-saved HTML file from disk
-fetch_local <- function(path) {
-  if (!file.exists(path)) stop("Local HTML not found at ", path)
-  body <- paste(readLines(path, warn = FALSE, encoding = "UTF-8"), collapse = "\n")
-  list(response = NULL, html = read_html(body), source = paste0("local file (", path, ")"))
-}
-
-fetch_html <- function(url, local_fallback = NULL) {
-  out <- with_retry(function() fetch_direct(url), tries = 3)
-  if (!is.null(out)) return(out)
-
-  message("Direct fetch failed, trying Wayback Machine...")
-  out <- with_retry(function() fetch_wayback(url), tries = 2)
-  if (!is.null(out)) return(out)
-
-  if (!is.null(local_fallback)) {
-    message("Wayback failed, trying local file...")
-    out <- tryCatch(fetch_local(local_fallback), error = function(e) NULL)
-    if (!is.null(out)) return(out)
-  }
-  NULL
-}
-
-page <- fetch_html(TARGET_URL, local_fallback = LOCAL_HTML_PATH)
-
-if (is.null(page)) {
-  notice(paste0(
-    "<strong>Could not fetch <code>", TARGET_URL, "</code>.</strong><br>",
-    "Tried: direct request (3x), Wayback Machine (2x), and local fallback file <code>",
-    LOCAL_HTML_PATH, "</code>.<br><br>",
-    "<strong>Manual workaround:</strong> open ",
-    "<a href='", TARGET_URL, "' target='_blank'>", TARGET_URL, "</a> ",
-    "in your browser, press Ctrl+S, choose <em>Webpage, HTML Only</em>, ",
-    "save as <code>", LOCAL_HTML_PATH, "</code> inside the ",
-    "<code>iac-studio-audit/</code> folder, then re-knit. ",
-    "Sections 2–5 below have been skipped for this render."
-  ))
-} else {
-  notice(paste0("Page fetched successfully via <strong>", page$source, "</strong>."))
-}
+page <- fetch_html(TARGET_URL)
 ```
 
-```{r seo-extract, error=TRUE}
+```{r seo-extract}
 seo_summary <- function(page, url) {
   if (is.null(page)) {
     return(tibble(Field = "Status", Value = "Could not fetch page"))
@@ -365,13 +252,9 @@ seo_tbl <- seo_summary(page, TARGET_URL)
 style_table(seo_tbl, caption = "On-page SEO snapshot (live from iac-studio.com)")
 ```
 
-```{r seo-extract-fallback, results='asis', echo=FALSE}
-if (is.null(page)) notice("Skipping on-page SEO checks because the page could not be fetched.")
-```
-
 ## Heading Structure (H1 → H6)
 
-```{r headings, error=TRUE}
+```{r headings}
 heading_audit <- function(page) {
   if (is.null(page)) return(tibble())
   map_dfr(1:6, function(i) {
@@ -401,21 +284,18 @@ if (nrow(h_tbl) > 0) {
 
 # 3. Content & Link Profile
 
-```{r content-stats, error=TRUE, results='asis'}
+```{r content-stats}
 content_stats <- function(page, url) {
   if (is.null(page)) return(NULL)
   doc <- page$html
-  body_node <- doc %>% html_element("body")
-  body_text <- if (inherits(body_node, "xml_missing")) "" else html_text(body_node, trim = TRUE)
-  words <- if (nchar(body_text) > 0) str_split(body_text, "\\s+")[[1]] else character(0)
+  body_text <- doc %>% html_element("body") %>% html_text(trim = TRUE)
+  words <- str_split(body_text, "\\s+")[[1]]
   words <- words[nchar(words) > 0]
 
   links <- doc %>% html_elements("a") %>% html_attr("href")
   links <- links[!is.na(links) & links != "" & !str_starts(links, "#") & !str_starts(links, "javascript:")]
   domain <- httr::parse_url(url)$hostname
-  is_internal <- if (length(links) > 0) {
-    str_detect(links, fixed(domain)) | str_starts(links, "/")
-  } else logical(0)
+  is_internal <- str_detect(links, fixed(domain)) | str_starts(links, "/")
 
   imgs <- doc %>% html_elements("img")
   alt_texts <- imgs %>% html_attr("alt")
@@ -444,20 +324,16 @@ content_stats <- function(page, url) {
 }
 
 cs <- content_stats(page, TARGET_URL)
-if (!is.null(cs)) {
-  print(style_table(cs, caption = "Content & link profile (live)"))
-} else {
-  notice("Skipping content & link profile because the page could not be fetched.")
-}
+if (!is.null(cs)) style_table(cs, caption = "Content & link profile (live)")
 ```
 
 ---
 
 # 4. Server, Security & Tech Stack
 
-```{r security-headers, error=TRUE, results='asis'}
+```{r security-headers}
 security_audit <- function(page) {
-  if (is.null(page) || is.null(page$response)) return(NULL)
+  if (is.null(page)) return(NULL)
   h <- headers(page$response)
   check <- function(name, recommended = "Set any value") {
     val <- h[[tolower(name)]]
@@ -481,16 +357,10 @@ security_audit <- function(page) {
 }
 
 sec <- security_audit(page)
-if (!is.null(sec)) {
-  print(style_table(sec, caption = "Security & server response headers"))
-} else if (!is.null(page) && is.null(page$response)) {
-  notice("Skipping security header check: page was loaded from a cached source (Wayback / local file), so live response headers are unavailable. Re-knit when the live site is reachable to capture them.")
-} else {
-  notice("Skipping security header check because the page could not be fetched.")
-}
+if (!is.null(sec)) style_table(sec, caption = "Security & server response headers")
 ```
 
-```{r tech-detect, error=TRUE, results='asis'}
+```{r tech-detect}
 detect_tech <- function(page) {
   if (is.null(page)) return(NULL)
   doc <- page$html
@@ -516,18 +386,14 @@ detect_tech <- function(page) {
 }
 
 tech <- detect_tech(page)
-if (!is.null(tech)) {
-  print(style_table(tech, caption = "Technology fingerprint (best-effort detection)"))
-} else {
-  notice("Skipping tech fingerprint because the page could not be fetched.")
-}
+if (!is.null(tech)) style_table(tech, caption = "Technology fingerprint (best-effort detection)")
 ```
 
 ---
 
 # 5. Multi-Page Comparison
 
-```{r multipage, error=TRUE}
+```{r multipage}
 all_pages <- c(TARGET_URL, EXTRA_PAGES)
 
 page_metrics <- map_dfr(all_pages, function(u) {
@@ -564,7 +430,7 @@ style_table(page_metrics, caption = "Page-by-page snapshot (live)")
 
 # 6. Prioritized Recommendations
 
-```{r recommendations, error=TRUE}
+```{r recommendations}
 recommendations <- function(scores, cwv, seo_tbl, sec, cs) {
   recs <- list()
 
@@ -579,12 +445,6 @@ recommendations <- function(scores, cwv, seo_tbl, sec, cs) {
         Action = "Compress and lazy-load images, defer non-critical JS, enable browser caching, use a CDN."
       )
     }
-  }
-
-  if (is.null(seo_tbl) || !"Field" %in% names(seo_tbl)) {
-    return(tibble(Priority = "INFO", Area = "Data",
-                  Finding = "Page could not be fetched, so on-page recommendations were skipped.",
-                  Action = "Re-knit the report when the site is reachable."))
   }
 
   # Meta description
