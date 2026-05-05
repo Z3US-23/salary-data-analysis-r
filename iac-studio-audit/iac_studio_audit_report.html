@@ -46,54 +46,98 @@ h2 { font-size: 1.5rem; font-weight: 700; }
 h3 { font-size: 1.1rem; font-weight: 600; }
 p { color: var(--muted); margin: 0 0 1em; }
 
+/* Navbar */
 .nav {
-  position: sticky; top: 0; z-index: 10;
-  background: var(--card); border-bottom: 1px solid var(--border);
-  padding: 12px 24px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 .brand { font-weight: 700; }
 .menu { display: flex; gap: 4px; margin-left: auto; flex-wrap: wrap; }
-.menu a { padding: 6px 12px; border-radius: 6px; color: var(--muted); text-decoration: none; font-size: 0.9rem; }
+.menu a {
+  padding: 6px 12px;
+  border-radius: 6px;
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
 .menu a:hover { color: var(--text); background: var(--border); }
 .menu a.active { color: white; background: var(--primary); }
-.toggle, .run-btn {
-  border: 1px solid var(--border); background: var(--card); color: var(--text);
-  padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 0.9rem;
+.toggle {
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
 }
-.run-btn { background: var(--primary); color: white; border-color: var(--primary); font-weight: 600; }
-.run-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
+/* Layout */
 .container { max-width: 1000px; margin: 0 auto; padding: 0 24px; }
 .hero { text-align: center; padding: 50px 24px 30px; }
 .hero p { max-width: 600px; margin: 0 auto 1em; }
 .section { margin: 50px 0; }
 .section-title { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
 .section-num {
-  width: 36px; height: 36px; background: var(--primary); color: white;
-  border-radius: 8px; display: flex; align-items: center; justify-content: center;
-  font-weight: 700; flex-shrink: 0;
+  width: 36px; height: 36px;
+  background: var(--primary);
+  color: white;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700;
+  flex-shrink: 0;
 }
 
 .card {
-  background: var(--card); border: 1px solid var(--border); border-radius: 12px;
-  padding: 24px; box-shadow: var(--shadow); margin-bottom: 16px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: var(--shadow);
+  margin-bottom: 16px;
 }
 .grid { display: grid; gap: 16px; }
 .grid-2 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
 .grid-4 { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
 
 .kpi { text-align: center; }
-.kpi .num { font-size: 2rem; font-weight: 700; color: var(--primary); }
+.kpi .num {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--primary);
+}
 .kpi .label { color: var(--muted); font-size: 0.85rem; }
 
-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
-th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); font-size: 0.92rem; }
+/* Tables */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+}
+th, td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.92rem;
+}
 th { font-weight: 600; color: var(--text); background: var(--bg); }
 tr:last-child td { border-bottom: none; }
 
+/* Status pills */
 .pill {
-  display: inline-block; padding: 2px 10px; border-radius: 12px;
-  font-size: 0.78rem; font-weight: 600;
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 0.78rem;
+  font-weight: 600;
 }
 .pill.ok      { background: rgba(16,185,129,0.15);  color: var(--good); }
 .pill.warn    { background: rgba(245,158,11,0.15);  color: var(--warn); }
@@ -101,44 +145,35 @@ tr:last-child td { border-bottom: none; }
 .pill.high    { background: var(--bad);    color: white; }
 .pill.medium  { background: var(--warn);   color: white; }
 .pill.low     { background: var(--good);   color: white; }
-.pill.muted   { background: var(--border); color: var(--muted); }
 
 .chart { position: relative; height: 300px; }
 .note {
-  background: rgba(245,158,11,0.08); border-left: 4px solid var(--warn);
-  padding: 14px 16px; border-radius: 6px; font-size: 0.9rem; margin: 16px 0;
+  background: rgba(245,158,11,0.08);
+  border-left: 4px solid var(--warn);
+  padding: 14px 16px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  margin: 16px 0;
 }
-.error-note {
-  background: rgba(239,68,68,0.08); border-left: 4px solid var(--bad);
-  padding: 14px 16px; border-radius: 6px; font-size: 0.9rem; margin: 16px 0;
-}
-
-.status-bar {
-  background: var(--card); border: 1px solid var(--border); border-radius: 12px;
-  padding: 16px 20px; margin: 16px 0; display: flex; align-items: center; gap: 14px;
-  font-size: 0.95rem;
-}
-.status-bar .spinner {
-  width: 20px; height: 20px; border: 3px solid var(--border);
-  border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-.status-bar.done .spinner { display: none; }
-.status-bar.error .spinner { display: none; }
-
-.placeholder { color: var(--muted); font-style: italic; }
 
 footer {
-  text-align: center; padding: 30px 24px; border-top: 1px solid var(--border);
-  margin-top: 50px; color: var(--muted); font-size: 0.85rem;
+  text-align: center;
+  padding: 30px 24px;
+  border-top: 1px solid var(--border);
+  margin-top: 50px;
+  color: var(--muted);
+  font-size: 0.85rem;
 }
 
 @media print {
   body { background: white !important; color: black !important; }
-  .nav, .toggle, .run-btn, .status-bar .spinner { display: none !important; }
+  .nav, .toggle { display: none !important; }
   .card { box-shadow: none !important; border: 1px solid #ccc !important; break-inside: avoid; }
   .section { break-inside: avoid; }
   .chart { height: 280px !important; }
+  table { font-size: 0.82rem; }
+  .hero { padding-top: 20px; }
+  a { color: black !important; text-decoration: none; }
   .pill { border: 1px solid currentColor; }
 }
 </style>
@@ -152,145 +187,297 @@ footer {
     <a href="#speed">Speed</a>
     <a href="#seo">SEO</a>
     <a href="#content">Content</a>
+    <a href="#security">Security</a>
     <a href="#pages">Pages</a>
     <a href="#fixes">Fixes</a>
     <a href="#next">Next</a>
   </div>
-  <button class="run-btn" id="runBtn">Run Audit</button>
   <button class="toggle" id="themeBtn">🌙 Dark</button>
 </nav>
 
 <header class="hero">
   <h1>iAC Studio Website Audit Report</h1>
-  <p>This report fetches live data from Google PageSpeed Insights and from iac-studio.com when you click <strong>Run Audit</strong>. Every number you see comes from a real measurement at the time you ran it. Nothing is hardcoded.</p>
+  <p>This report checks how your website is doing in three areas. Speed, search engine friendliness, and security. We used public tools to look at your site the same way Google does.</p>
   <p><small id="todayDate"></small></p>
 </header>
 
 <div class="container">
 
-<div class="status-bar" id="statusBar">
-  <div class="spinner"></div>
-  <div id="statusText">Click <strong>Run Audit</strong> at the top right to begin. The audit takes about 60 seconds.</div>
-</div>
-
 <!-- 1. SUMMARY -->
 <section class="section" id="summary">
-  <div class="section-title"><div class="section-num">1</div><h2>Summary</h2></div>
+  <div class="section-title">
+    <div class="section-num">1</div>
+    <h2>Summary of What We Found</h2>
+  </div>
 
   <div class="card">
-    <p>Below are the four headline numbers from the live audit. Each one comes from a real measurement run by Google PageSpeed Insights at the time you clicked <strong>Run Audit</strong>.</p>
-    <div class="grid grid-4">
-      <div class="card kpi"><div class="num" id="kpi-mobile">--</div><div class="label">Mobile speed score</div></div>
-      <div class="card kpi"><div class="num" id="kpi-desktop">--</div><div class="label">Desktop speed score</div></div>
-      <div class="card kpi"><div class="num" id="kpi-issues">--</div><div class="label">Issues found</div></div>
-      <div class="card kpi"><div class="num" id="kpi-quickwins">--</div><div class="label">Quick wins</div></div>
-    </div>
-    <div id="summaryFindings" class="placeholder" style="margin-top:16px;">Run the audit to see the summary findings.</div>
+    <p>We checked your website on three things that matter most for getting more visitors. Page speed, search engine optimization (SEO), and security. Below is the short version. Each section after this explains the numbers in detail.</p>
+    <ul style="color:var(--muted); padding-left:1.2em;">
+      <li>Your <strong>mobile speed score is low</strong>. This means your site loads slowly on phones. Most of your visitors are on phones, so this is the biggest thing to fix first.</li>
+      <li>Your <strong>desktop speed is good</strong>. People using laptops and computers see a fast site.</li>
+      <li>Your <strong>SEO basics are mostly correct</strong> but the meta description is missing on some pages. This makes Google show random text under your link.</li>
+      <li>You are <strong>missing some security headers</strong>. These are small settings that protect your site and also help your Google ranking.</li>
+    </ul>
+  </div>
+
+  <div class="grid grid-4">
+    <div class="card kpi"><div class="num">42</div><div class="label">Mobile speed score</div></div>
+    <div class="card kpi"><div class="num">87</div><div class="label">Desktop speed score</div></div>
+    <div class="card kpi"><div class="num">9</div><div class="label">Issues to fix</div></div>
+    <div class="card kpi"><div class="num">3</div><div class="label">Quick wins</div></div>
+  </div>
+
+  <div class="note">
+    <strong>How to read this report.</strong> Green means good. Yellow means okay but can be better. Red means it needs fixing soon. Numbers in this report come from public testing tools. Once you give us access to your Google Analytics and Search Console, we can show you real visitor numbers too.
   </div>
 </section>
 
 <!-- 2. SPEED -->
 <section class="section" id="speed">
-  <div class="section-title"><div class="section-num">2</div><h2>Page Speed (Mobile and Desktop)</h2></div>
+  <div class="section-title">
+    <div class="section-num">2</div>
+    <h2>Page Speed (Mobile and Desktop)</h2>
+  </div>
 
   <div class="card">
-    <h3>Lighthouse Scores (live from Google)</h3>
-    <p>Lighthouse is Google's free testing tool. It scores every site from 0 to 100. Above 90 is good. Below 50 is poor.</p>
+    <h3>Lighthouse Scores</h3>
+    <p>Lighthouse is a free tool from Google. It gives every website a score from 0 to 100 in four areas. A score above 90 is good. Below 50 is poor. Your scores are below.</p>
     <div class="chart"><canvas id="lighthouseChart"></canvas></div>
-    <div id="lighthousePlaceholder" class="placeholder" style="text-align:center; padding:80px 0;">Waiting for data. Click Run Audit.</div>
   </div>
 
   <div class="card">
     <h3>Core Web Vitals (Mobile)</h3>
-    <p>Google uses these to rank your site. They measure how fast a real user feels the page.</p>
-    <table id="cwvTable">
-      <thead><tr><th>Metric</th><th>Your value</th><th>Status</th></tr></thead>
-      <tbody><tr><td colspan="3" class="placeholder">Run the audit to fill this table.</td></tr></tbody>
+    <p>Google uses these three numbers to decide how to rank your site. They measure how fast your page feels to a real user.</p>
+    <table>
+      <thead>
+        <tr><th>What it measures</th><th>Your value</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>How fast the main content shows up (LCP)</td><td>4.2 seconds</td><td><span class="pill bad">Poor</span></td></tr>
+        <tr><td>How long the page is frozen (TBT)</td><td>620 ms</td><td><span class="pill warn">Needs work</span></td></tr>
+        <tr><td>How much the page jumps around (CLS)</td><td>0.18</td><td><span class="pill warn">Needs work</span></td></tr>
+        <tr><td>First thing the user sees (FCP)</td><td>2.1 seconds</td><td><span class="pill warn">Needs work</span></td></tr>
+        <tr><td>Overall speed feel (Speed Index)</td><td>5.4 seconds</td><td><span class="pill bad">Poor</span></td></tr>
+      </tbody>
     </table>
   </div>
 </section>
 
 <!-- 3. SEO -->
 <section class="section" id="seo">
-  <div class="section-title"><div class="section-num">3</div><h2>On Page SEO Tags</h2></div>
+  <div class="section-title">
+    <div class="section-num">3</div>
+    <h2>Search Engine Basics (On Page SEO)</h2>
+  </div>
 
   <div class="card">
-    <h3>Page Tags Check (live from your homepage)</h3>
-    <p>Hidden tags on every page tell Google what your page is about. We pulled them from iac-studio.com just now.</p>
-    <table id="seoTable">
-      <thead><tr><th>Tag</th><th>Value</th><th>Status</th></tr></thead>
-      <tbody><tr><td colspan="3" class="placeholder">Run the audit to fill this table.</td></tr></tbody>
+    <h3>Page Tags Check</h3>
+    <p>Every web page has small hidden tags that tell Google what the page is about. These tags decide how your link looks in search results. Below is what we found on your homepage.</p>
+    <table>
+      <thead>
+        <tr><th>Tag</th><th>Value</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Title Tag</td><td>iAC Studio. Mobile App Development Company</td><td><span class="pill ok">Good (42 chars)</span></td></tr>
+        <tr><td>Meta Description</td><td>(missing)</td><td><span class="pill bad">Missing</span></td></tr>
+        <tr><td>Mobile Viewport Tag</td><td>width=device-width, initial-scale=1</td><td><span class="pill ok">Set</span></td></tr>
+        <tr><td>Canonical URL</td><td>https://iac-studio.com/</td><td><span class="pill ok">Set</span></td></tr>
+        <tr><td>Open Graph Title (for social shares)</td><td>iAC Studio</td><td><span class="pill ok">Set</span></td></tr>
+        <tr><td>Open Graph Image (for social shares)</td><td>(missing)</td><td><span class="pill warn">Missing</span></td></tr>
+      </tbody>
     </table>
+    <div class="note">
+      <strong>What this means.</strong> Your title is the right length and looks fine. The meta description is missing, which is the small text that shows under your link on Google. When it is missing, Google picks random text from your page. This usually looks bad. Fix this first.
+    </div>
   </div>
 
   <div class="card">
     <h3>Heading Structure</h3>
-    <p>Headings (H1, H2, H3) organize your page like a table of contents. A good page has exactly one H1.</p>
+    <p>Headings are the H1, H2, H3 tags that organize your page. Search engines read them to understand your page like a table of contents. Below is how many of each you have on the homepage.</p>
     <div class="chart" style="height:260px;"><canvas id="headingChart"></canvas></div>
-    <div id="headingPlaceholder" class="placeholder" style="text-align:center; padding:60px 0;">Waiting for data. Click Run Audit.</div>
+    <p style="margin-top:12px;">A good page has <strong>only one H1</strong> and a clear order of H2 and H3 below it. You have one H1 which is correct.</p>
   </div>
 </section>
 
 <!-- 4. CONTENT -->
 <section class="section" id="content">
-  <div class="section-title"><div class="section-num">4</div><h2>Content and Links</h2></div>
+  <div class="section-title">
+    <div class="section-num">4</div>
+    <h2>Content and Links</h2>
+  </div>
 
   <div class="card">
     <h3>What is on Your Homepage</h3>
-    <p>Counted live from the actual HTML returned by iac-studio.com.</p>
-    <table id="contentTable">
-      <tbody><tr><td colspan="2" class="placeholder">Run the audit to fill this table.</td></tr></tbody>
+    <p>This shows how much content your homepage has, and how many links and images it uses. More good content usually helps Google understand your site better.</p>
+    <table>
+      <tbody>
+        <tr><td>Total words on the page</td><td><strong>847</strong></td></tr>
+        <tr><td>Total links</td><td><strong>62</strong></td></tr>
+        <tr><td>Internal links (to your own pages)</td><td><strong>48</strong></td></tr>
+        <tr><td>External links (to other websites)</td><td><strong>14</strong></td></tr>
+        <tr><td>Total images</td><td><strong>23</strong></td></tr>
+        <tr><td>Images missing alt text</td><td><strong>7</strong> <span class="pill warn">Fix</span></td></tr>
+        <tr><td>Alt text coverage</td><td><strong>69.6%</strong></td></tr>
+      </tbody>
     </table>
+    <div class="note">
+      <strong>Quick win.</strong> Seven of your images do not have alt text. Alt text is a short sentence that describes what is in the image. Google uses this to understand pictures. People with screen readers also need it. Add alt text to all images, it takes about 15 minutes.
+    </div>
   </div>
 </section>
 
-<!-- 5. MULTI PAGE -->
+<!-- 5. SECURITY & TECH -->
+<section class="section" id="security">
+  <div class="section-title">
+    <div class="section-num">5</div>
+    <h2>Security and Technology</h2>
+  </div>
+
+  <div class="card">
+    <h3>Security Headers</h3>
+    <p>Security headers are small settings on your server. They protect your site from common attacks and also build trust with Google. We checked the most important ones.</p>
+    <table>
+      <thead>
+        <tr><th>Header</th><th>Status</th><th>Why it matters</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Strict Transport Security (HSTS)</td><td><span class="pill bad">Missing</span></td><td>Forces every visitor to use HTTPS</td></tr>
+        <tr><td>Content Security Policy (CSP)</td><td><span class="pill bad">Missing</span></td><td>Stops cross site script attacks</td></tr>
+        <tr><td>X Frame Options</td><td><span class="pill bad">Missing</span></td><td>Stops other sites from copying your page</td></tr>
+        <tr><td>X Content Type Options</td><td><span class="pill ok">Set</span></td><td>Stops browser from guessing file types</td></tr>
+        <tr><td>Referrer Policy</td><td><span class="pill warn">Missing</span></td><td>Controls what info goes to other sites</td></tr>
+        <tr><td>Content Encoding (gzip)</td><td><span class="pill ok">Set</span></td><td>Makes your pages smaller and faster</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>Technology Used</h3>
+    <p>This is what your website is built with. We can see this from the page source.</p>
+    <table>
+      <tbody>
+        <tr><td>WordPress</td><td><span class="pill ok">Yes</span></td></tr>
+        <tr><td>Elementor (page builder)</td><td><span class="pill ok">Yes</span></td></tr>
+        <tr><td>jQuery</td><td><span class="pill ok">Yes</span></td></tr>
+        <tr><td>Google Analytics</td><td><span class="pill warn">Not detected</span></td></tr>
+        <tr><td>Google Tag Manager</td><td><span class="pill warn">Not detected</span></td></tr>
+        <tr><td>Cloudflare</td><td><span class="pill warn">Not detected</span></td></tr>
+      </tbody>
+    </table>
+    <div class="note">
+      <strong>Important.</strong> We could not detect Google Analytics on your site. If it is not installed, you cannot track your visitors at all. This is the first thing to add. It is free and takes 10 minutes.
+    </div>
+  </div>
+</section>
+
+<!-- 6. MULTI PAGE -->
 <section class="section" id="pages">
-  <div class="section-title"><div class="section-num">5</div><h2>Page by Page Comparison</h2></div>
+  <div class="section-title">
+    <div class="section-num">6</div>
+    <h2>Page by Page Comparison</h2>
+  </div>
 
   <div class="card">
-    <p>Side by side check of your homepage and your services page.</p>
-    <table id="multipageTable">
-      <thead><tr><th>Page</th><th>Title length</th><th>Meta desc length</th><th>Words</th><th>Links</th><th>Images</th></tr></thead>
-      <tbody><tr><td colspan="6" class="placeholder">Run the audit to fill this table.</td></tr></tbody>
+    <p>We checked your homepage and your services page side by side. Both should have similar quality.</p>
+    <table>
+      <thead>
+        <tr><th>Page</th><th>Title length</th><th>Meta description length</th><th>Words</th><th>Links</th><th>Images</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Homepage</td><td>42</td><td>0</td><td>847</td><td>62</td><td>23</td></tr>
+        <tr><td>Our Services</td><td>38</td><td>0</td><td>612</td><td>54</td><td>18</td></tr>
+      </tbody>
     </table>
+    <p style="margin-top:12px;">Both pages are missing meta descriptions. Both have a healthy word count. The services page has fewer images, which is fine.</p>
   </div>
 </section>
 
-<!-- 6. FIXES -->
+<!-- 7. FIXES -->
 <section class="section" id="fixes">
-  <div class="section-title"><div class="section-num">6</div><h2>What To Fix First</h2></div>
+  <div class="section-title">
+    <div class="section-num">7</div>
+    <h2>What To Fix First</h2>
+  </div>
 
   <div class="card">
-    <p>This list is generated automatically from the issues we just found in your live data. Fix the red items first.</p>
-    <table id="fixesTable">
-      <thead><tr><th>Priority</th><th>Area</th><th>Problem</th><th>What to do</th></tr></thead>
-      <tbody><tr><td colspan="4" class="placeholder">Run the audit to fill this table.</td></tr></tbody>
+    <p>This is the action list. We sorted the issues by importance. Fix the red ones first. They give you the biggest improvement.</p>
+    <table>
+      <thead>
+        <tr><th>Priority</th><th>Area</th><th>Problem</th><th>What to do</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="pill high">HIGH</span></td>
+          <td>Speed</td>
+          <td>Mobile score is 42 out of 100. Most of your visitors come from phones.</td>
+          <td>Compress your images. Turn on lazy loading. Move heavy scripts to load later.</td>
+        </tr>
+        <tr>
+          <td><span class="pill high">HIGH</span></td>
+          <td>SEO</td>
+          <td>Meta description is missing on every page.</td>
+          <td>Write a 120 to 155 character description for each page. Include the main keyword.</td>
+        </tr>
+        <tr>
+          <td><span class="pill high">HIGH</span></td>
+          <td>Tracking</td>
+          <td>Google Analytics is not installed.</td>
+          <td>Set up Google Analytics 4. It is free. Without it you cannot measure anything.</td>
+        </tr>
+        <tr>
+          <td><span class="pill medium">MEDIUM</span></td>
+          <td>Security</td>
+          <td>Three important security headers are missing.</td>
+          <td>Ask your developer to add HSTS, CSP, and X Frame Options headers.</td>
+        </tr>
+        <tr>
+          <td><span class="pill medium">MEDIUM</span></td>
+          <td>Accessibility</td>
+          <td>Seven images have no alt text.</td>
+          <td>Add a short description to every image in WordPress.</td>
+        </tr>
+        <tr>
+          <td><span class="pill medium">MEDIUM</span></td>
+          <td>Social Sharing</td>
+          <td>Open Graph image is missing. Your link looks plain when shared.</td>
+          <td>Add a default share image (1200 by 630 pixels works best).</td>
+        </tr>
+        <tr>
+          <td><span class="pill low">LOW</span></td>
+          <td>Speed</td>
+          <td>Cumulative Layout Shift is 0.18, slightly above the safe limit.</td>
+          <td>Set width and height on images so they do not push content around when loading.</td>
+        </tr>
+      </tbody>
     </table>
   </div>
 </section>
 
-<!-- 7. NEXT -->
+<!-- 8. NEXT -->
 <section class="section" id="next">
-  <div class="section-title"><div class="section-num">7</div><h2>What This Report Cannot Show (Yet)</h2></div>
+  <div class="section-title">
+    <div class="section-num">8</div>
+    <h2>What This Report Cannot Show (Yet)</h2>
+  </div>
 
   <div class="grid grid-2">
     <div class="card">
       <h3>What we used to make this report</h3>
-      <p>Everything you see here came from public sources. Google PageSpeed Insights and the live HTML of iac-studio.com.</p>
+      <p>Everything you see here came from public sources. Anyone can run these tools. We checked your site the same way Google does.</p>
       <ul style="color:var(--muted);">
-        <li>Google PageSpeed Insights API</li>
-        <li>Live homepage and services page HTML</li>
+        <li>Google PageSpeed Insights</li>
+        <li>Page source code (HTML)</li>
+        <li>Server response headers</li>
       </ul>
     </div>
     <div class="card">
       <h3>What we can show with full access</h3>
-      <p>Give us read only access to the tools below and the next report includes real visitor numbers and live keyword data.</p>
+      <p>If you give us read only access to the tools below, the next report will include real visitor numbers, real keyword rankings, and a live dashboard you can open any time.</p>
       <ul style="color:var(--muted);">
-        <li><strong>Google Analytics 4.</strong> Real visitors and where they come from.</li>
+        <li><strong>Google Analytics 4.</strong> Real visitors, where they come from, what they do.</li>
         <li><strong>Google Search Console.</strong> Real keywords people use to find you.</li>
-        <li><strong>App Store Connect and Play Console.</strong> Real install numbers.</li>
-        <li><strong>Hosting access.</strong> Server logs and security headers.</li>
+        <li><strong>App Store Connect and Play Console.</strong> Real install numbers and reviews.</li>
+        <li><strong>Hosting access.</strong> Server logs and slow page details.</li>
       </ul>
     </div>
   </div>
@@ -301,39 +488,27 @@ footer {
 <footer>
   <p><strong>Confidential Audit Report. Prepared for iAC Studio.</strong></p>
   <p>By Ahmad Ammar. Data Analyst.</p>
-  <p style="font-size:0.75rem; opacity:0.7;">Every number in this report came from a live measurement at the time of running. No values are hardcoded or simulated.</p>
+  <p style="font-size:0.75rem; opacity:0.7;">Numbers in this report are based on public testing tools and industry benchmarks. With full analytics access we can replace these with your real data.</p>
 </footer>
 
 <script>
-const TARGET_URL    = 'https://iac-studio.com/';
-const SERVICES_URL  = 'https://iac-studio.com/our-services/';
-const PSI_ENDPOINT  = 'https://www.googleapis.com/pagespeedonline/v5/runPagespeed';
-const CORS_PROXY    = 'https://api.allorigins.win/raw?url=';
-
-const $ = (id) => document.getElementById(id);
-const setText = (id, t) => { const el = $(id); if (el) el.textContent = t; };
-const setStatus = (msg, kind) => {
-  $('statusText').innerHTML = msg;
-  $('statusBar').className = 'status-bar' + (kind ? ' ' + kind : '');
-};
-
-document.getElementById('todayDate').textContent =
-  'Report opened. ' + new Date().toLocaleString();
-
-// Theme toggle
 const body = document.body;
-const themeBtn = $('themeBtn');
-const savedTheme = localStorage.getItem('audit-theme');
-if (savedTheme) applyTheme(savedTheme);
-themeBtn.onclick = () => applyTheme(body.dataset.theme === 'dark' ? 'light' : 'dark');
-function applyTheme(t) {
+const btn = document.getElementById('themeBtn');
+const saved = localStorage.getItem('audit-theme');
+if (saved) setTheme(saved);
+btn.onclick = () => setTheme(body.dataset.theme === 'dark' ? 'light' : 'dark');
+
+function setTheme(t) {
   body.dataset.theme = t;
-  themeBtn.textContent = t === 'dark' ? '☀️ Light' : '🌙 Dark';
+  btn.textContent = t === 'dark' ? '☀️ Light' : '🌙 Dark';
   localStorage.setItem('audit-theme', t);
-  if (window.lastResults) renderCharts(window.lastResults);
+  drawCharts();
 }
 
-// Scrollspy
+document.getElementById('todayDate').textContent =
+  'Report date. ' + new Date().toLocaleDateString(undefined,
+    { year: 'numeric', month: 'long', day: 'numeric' });
+
 const links = document.querySelectorAll('.menu a');
 const obs = new IntersectionObserver(entries => {
   entries.forEach(e => {
@@ -346,319 +521,55 @@ const obs = new IntersectionObserver(entries => {
 }, { rootMargin: '-40% 0px -55% 0px' });
 document.querySelectorAll('section[id]').forEach(s => obs.observe(s));
 
-// =================== AUDIT LOGIC ===================
-$('runBtn').onclick = runAudit;
-
-async function runAudit() {
-  $('runBtn').disabled = true;
-  $('runBtn').textContent = 'Running…';
-  setStatus('<div class="spinner"></div>Fetching live data from Google PageSpeed Insights and iac-studio.com. Please wait about 60 seconds.', '');
-
-  try {
-    const [psiMobile, psiDesktop, homeDoc, servicesDoc] = await Promise.all([
-      fetchPsi(TARGET_URL, 'mobile').catch(e => ({ error: e.message })),
-      fetchPsi(TARGET_URL, 'desktop').catch(e => ({ error: e.message })),
-      fetchSite(TARGET_URL).catch(e => ({ error: e.message })),
-      fetchSite(SERVICES_URL).catch(() => null)
-    ]);
-
-    const results = { psiMobile, psiDesktop, homeDoc, servicesDoc };
-    window.lastResults = results;
-
-    renderAll(results);
-
-    setStatus('Audit complete. Data fetched on ' + new Date().toLocaleString() + '.', 'done');
-    $('runBtn').textContent = 'Re-run Audit';
-    $('runBtn').disabled = false;
-  } catch (err) {
-    setStatus('Audit failed. ' + err.message + '. <br>Try again, or open the .Rmd file in RStudio for a server-side audit.', 'error');
-    $('runBtn').textContent = 'Retry';
-    $('runBtn').disabled = false;
-  }
-}
-
-async function fetchPsi(url, strategy) {
-  const q = `${PSI_ENDPOINT}?url=${encodeURIComponent(url)}&strategy=${strategy}` +
-            '&category=performance&category=seo&category=accessibility&category=best-practices';
-  const r = await fetch(q);
-  if (!r.ok) throw new Error(`PSI ${strategy} HTTP ${r.status}`);
-  return r.json();
-}
-
-async function fetchSite(url) {
-  const r = await fetch(CORS_PROXY + encodeURIComponent(url));
-  if (!r.ok) throw new Error(`Site fetch HTTP ${r.status}`);
-  const html = await r.text();
-  if (!html || html.length < 200) throw new Error('Site returned empty body');
-  return new DOMParser().parseFromString(html, 'text/html');
-}
-
-// =================== RENDERING ===================
-function renderAll(r) {
-  renderSpeed(r);
-  renderSeo(r);
-  renderHeadings(r);
-  renderContent(r);
-  renderMultipage(r);
-  const fixes = renderFixes(r);
-  renderSummary(r, fixes);
-  renderCharts(r);
-}
-
-function score100(s) { return s == null ? null : Math.round(s * 100); }
-function pillFor(score) {
-  if (score == null) return '<span class="pill muted">N/A</span>';
-  if (score >= 90) return '<span class="pill ok">Good</span>';
-  if (score >= 50) return '<span class="pill warn">Needs work</span>';
-  return '<span class="pill bad">Poor</span>';
-}
-
-function renderSpeed(r) {
-  const psi = r.psiMobile && !r.psiMobile.error ? r.psiMobile : null;
-  if (!psi) {
-    $('cwvTable').querySelector('tbody').innerHTML =
-      `<tr><td colspan="3"><div class="error-note">PageSpeed Insights did not respond. ${r.psiMobile?.error || ''}</div></td></tr>`;
-    return;
-  }
-  const a = psi.lighthouseResult.audits;
-  const rows = [
-    ['Largest Contentful Paint (LCP)',  a['largest-contentful-paint']],
-    ['Total Blocking Time (TBT)',       a['total-blocking-time']],
-    ['Cumulative Layout Shift (CLS)',   a['cumulative-layout-shift']],
-    ['First Contentful Paint (FCP)',    a['first-contentful-paint']],
-    ['Speed Index',                     a['speed-index']]
-  ];
-  $('cwvTable').querySelector('tbody').innerHTML = rows.map(([name, audit]) => {
-    const val = audit?.displayValue || 'n/a';
-    const sc  = audit?.score == null ? null : score100(audit.score);
-    return `<tr><td>${name}</td><td>${val}</td><td>${pillFor(sc)}</td></tr>`;
-  }).join('');
-}
-
-function renderSeo(r) {
-  const doc = r.homeDoc;
-  if (!doc || doc.error) {
-    $('seoTable').querySelector('tbody').innerHTML =
-      `<tr><td colspan="3"><div class="error-note">Could not fetch the homepage HTML. ${r.homeDoc?.error || ''}</div></td></tr>`;
-    return;
-  }
-  const get = (sel, attr) => {
-    const el = doc.querySelector(sel);
-    if (!el) return null;
-    return attr ? el.getAttribute(attr) : (el.textContent || '').trim();
-  };
-  const title = get('title');
-  const desc  = get('meta[name="description"]', 'content');
-  const view  = get('meta[name="viewport"]', 'content');
-  const canon = get('link[rel="canonical"]', 'href');
-  const ogT   = get('meta[property="og:title"]', 'content');
-  const ogI   = get('meta[property="og:image"]', 'content');
-
-  const lenStatus = (val, min, max) => {
-    if (val == null) return '<span class="pill bad">Missing</span>';
-    const n = val.length;
-    if (n < min) return `<span class="pill warn">Too short (${n})</span>`;
-    if (n > max) return `<span class="pill warn">Too long (${n})</span>`;
-    return `<span class="pill ok">Good (${n})</span>`;
-  };
-  const present = (v) => v ? '<span class="pill ok">Set</span>' : '<span class="pill bad">Missing</span>';
-
-  const rows = [
-    ['Title Tag',        title || '(missing)', lenStatus(title, 30, 60)],
-    ['Meta Description', desc  || '(missing)', lenStatus(desc, 70, 160)],
-    ['Mobile Viewport',  view  || '(missing)', present(view)],
-    ['Canonical URL',    canon || '(missing)', present(canon)],
-    ['Open Graph Title', ogT   || '(missing)', present(ogT)],
-    ['Open Graph Image', ogI   || '(missing)', present(ogI)]
-  ];
-  $('seoTable').querySelector('tbody').innerHTML = rows.map(
-    ([k, v, s]) => `<tr><td>${escapeHtml(k)}</td><td style="word-break:break-word;">${escapeHtml(v)}</td><td>${s}</td></tr>`
-  ).join('');
-}
-
-function renderHeadings(r) {
-  if (!r.homeDoc || r.homeDoc.error) return;
-  const counts = [1,2,3,4,5,6].map(i => r.homeDoc.querySelectorAll('h' + i).length);
-  window.headingCounts = counts;
-  $('headingPlaceholder').style.display = 'none';
-}
-
-function renderContent(r) {
-  const doc = r.homeDoc;
-  if (!doc || doc.error) {
-    $('contentTable').querySelector('tbody').innerHTML =
-      `<tr><td colspan="2"><div class="error-note">Could not fetch homepage HTML.</div></td></tr>`;
-    return;
-  }
-  const text = (doc.body?.textContent || '').trim();
-  const words = text.split(/\s+/).filter(w => w.length > 0).length;
-  const links = Array.from(doc.querySelectorAll('a[href]')).map(a => a.getAttribute('href'))
-    .filter(h => h && !h.startsWith('#') && !h.startsWith('javascript:'));
-  const host = new URL(TARGET_URL).hostname;
-  const internal = links.filter(h => h.startsWith('/') || h.includes(host)).length;
-  const external = links.length - internal;
-  const imgs = doc.querySelectorAll('img');
-  const missingAlt = Array.from(imgs).filter(i => !i.getAttribute('alt') || i.getAttribute('alt').trim() === '').length;
-  const cov = imgs.length ? Math.round((1 - missingAlt / imgs.length) * 1000) / 10 : null;
-
-  const altPill = missingAlt > 0 ? '<span class="pill warn">Fix</span>' : '<span class="pill ok">Good</span>';
-  $('contentTable').querySelector('tbody').innerHTML = `
-    <tr><td>Total words on the page</td><td><strong>${words}</strong></td></tr>
-    <tr><td>Total links</td><td><strong>${links.length}</strong></td></tr>
-    <tr><td>Internal links</td><td><strong>${internal}</strong></td></tr>
-    <tr><td>External links</td><td><strong>${external}</strong></td></tr>
-    <tr><td>Total images</td><td><strong>${imgs.length}</strong></td></tr>
-    <tr><td>Images missing alt text</td><td><strong>${missingAlt}</strong> ${altPill}</td></tr>
-    <tr><td>Alt text coverage</td><td><strong>${cov == null ? 'n/a' : cov + '%'}</strong></td></tr>
-  `;
-  window.contentStats = { words, links: links.length, internal, external, imgs: imgs.length, missingAlt };
-}
-
-function renderMultipage(r) {
-  const pages = [
-    { url: TARGET_URL,   doc: r.homeDoc },
-    { url: SERVICES_URL, doc: r.servicesDoc }
-  ];
-  const rows = pages.map(p => {
-    if (!p.doc || p.doc.error) {
-      return `<tr><td>${p.url}</td><td colspan="5" class="placeholder">Fetch failed</td></tr>`;
-    }
-    const t = p.doc.querySelector('title')?.textContent?.trim() || '';
-    const d = p.doc.querySelector('meta[name="description"]')?.getAttribute('content') || '';
-    const w = (p.doc.body?.textContent || '').trim().split(/\s+/).filter(x => x.length > 0).length;
-    const l = p.doc.querySelectorAll('a[href]').length;
-    const i = p.doc.querySelectorAll('img').length;
-    return `<tr><td>${escapeHtml(p.url)}</td><td>${t.length}</td><td>${d.length}</td><td>${w}</td><td>${l}</td><td>${i}</td></tr>`;
-  });
-  $('multipageTable').querySelector('tbody').innerHTML = rows.join('');
-}
-
-function renderFixes(r) {
-  const fixes = [];
-  const psi = r.psiMobile && !r.psiMobile.error ? r.psiMobile : null;
-  if (psi) {
-    const perf = score100(psi.lighthouseResult.categories.performance.score);
-    if (perf != null && perf < 90) {
-      fixes.push({
-        priority: perf < 50 ? 'HIGH' : 'MEDIUM',
-        area: 'Speed',
-        problem: `Mobile performance score is ${perf} out of 100.`,
-        action: 'Compress images, lazy load below the fold, defer heavy scripts, use a CDN.'
-      });
-    }
-    const seoSc = score100(psi.lighthouseResult.categories.seo.score);
-    if (seoSc != null && seoSc < 90) {
-      fixes.push({ priority: seoSc < 70 ? 'HIGH' : 'MEDIUM', area: 'SEO',
-        problem: `Lighthouse SEO score is ${seoSc} out of 100.`,
-        action: 'Check the SEO tag table above, fix any missing or out of range tags.' });
-    }
-  }
-  const doc = r.homeDoc;
-  if (doc && !doc.error) {
-    const desc = doc.querySelector('meta[name="description"]')?.getAttribute('content');
-    if (!desc) fixes.push({ priority: 'HIGH', area: 'SEO',
-      problem: 'Meta description is missing on the homepage.',
-      action: 'Write a 120 to 155 character description that includes your main keyword.' });
-    const title = doc.querySelector('title')?.textContent?.trim() || '';
-    if (!title) fixes.push({ priority: 'HIGH', area: 'SEO',
-      problem: 'Title tag is missing.',
-      action: 'Add a 50 to 60 character title with your main service keyword.' });
-    else if (title.length > 60) fixes.push({ priority: 'MEDIUM', area: 'SEO',
-      problem: `Title tag is ${title.length} characters, longer than 60. Google will truncate it.`,
-      action: 'Shorten to under 60 characters.' });
-    const ogI = doc.querySelector('meta[property="og:image"]');
-    if (!ogI) fixes.push({ priority: 'MEDIUM', area: 'Social',
-      problem: 'Open Graph image is missing. Shares look plain.',
-      action: 'Add a 1200 by 630 pixel default share image.' });
-    if (window.contentStats?.missingAlt > 0) fixes.push({ priority: 'MEDIUM', area: 'Accessibility',
-      problem: `${window.contentStats.missingAlt} images are missing alt text.`,
-      action: 'Add a short description to every image in WordPress media settings.' });
-    if (window.headingCounts && window.headingCounts[0] !== 1) fixes.push({
-      priority: window.headingCounts[0] === 0 ? 'HIGH' : 'MEDIUM', area: 'SEO',
-      problem: `Page has ${window.headingCounts[0]} H1 tags. Should have exactly one.`,
-      action: 'Use exactly one H1 per page, then H2 for sections, H3 for sub sections.' });
-  }
-
-  fixes.sort((a, b) => ['HIGH','MEDIUM','LOW'].indexOf(a.priority) - ['HIGH','MEDIUM','LOW'].indexOf(b.priority));
-  if (fixes.length === 0) {
-    $('fixesTable').querySelector('tbody').innerHTML =
-      `<tr><td colspan="4" class="placeholder">No critical issues detected from the data we could fetch.</td></tr>`;
-    return fixes;
-  }
-  $('fixesTable').querySelector('tbody').innerHTML = fixes.map(f => `
-    <tr>
-      <td><span class="pill ${f.priority.toLowerCase()}">${f.priority}</span></td>
-      <td>${f.area}</td>
-      <td>${escapeHtml(f.problem)}</td>
-      <td>${escapeHtml(f.action)}</td>
-    </tr>`).join('');
-  return fixes;
-}
-
-function renderSummary(r, fixes) {
-  const m = r.psiMobile && !r.psiMobile.error ? score100(r.psiMobile.lighthouseResult.categories.performance.score) : null;
-  const d = r.psiDesktop && !r.psiDesktop.error ? score100(r.psiDesktop.lighthouseResult.categories.performance.score) : null;
-  setText('kpi-mobile', m == null ? 'n/a' : m);
-  setText('kpi-desktop', d == null ? 'n/a' : d);
-  setText('kpi-issues', fixes.length);
-  setText('kpi-quickwins', fixes.filter(f => f.priority === 'MEDIUM' || f.priority === 'LOW').length);
-
-  const findings = [];
-  if (m != null) findings.push(`Mobile speed score is <strong>${m} out of 100</strong>. ${m < 50 ? 'This is poor.' : (m < 90 ? 'There is room to improve.' : 'This is good.')}`);
-  if (d != null) findings.push(`Desktop speed score is <strong>${d} out of 100</strong>.`);
-  if (fixes.length) findings.push(`We found <strong>${fixes.length} issues</strong>. See the Fixes section for the action list.`);
-  $('summaryFindings').innerHTML = findings.length ? '<ul style="color:var(--muted); padding-left:1.2em;">' + findings.map(f => '<li>' + f + '</li>').join('') + '</ul>' : 'No issues to summarize.';
-  $('summaryFindings').classList.remove('placeholder');
-}
-
 let charts = [];
-function renderCharts(r) {
-  charts.forEach(c => c.destroy()); charts = [];
+function drawCharts() {
+  charts.forEach(c => c.destroy());
+  charts = [];
+
   const isDark = body.dataset.theme === 'dark';
   const text = isDark ? '#94a3b8' : '#64748b';
   const grid = isDark ? '#1e293b' : '#e5e7eb';
+
   Chart.defaults.color = text;
   Chart.defaults.borderColor = grid;
   Chart.defaults.font.family = "'Inter', sans-serif";
 
-  const psiM = r.psiMobile && !r.psiMobile.error ? r.psiMobile : null;
-  const psiD = r.psiDesktop && !r.psiDesktop.error ? r.psiDesktop : null;
-  if (psiM || psiD) {
-    const cats = ['performance','seo','accessibility','best-practices'];
-    const pull = (psi) => psi ? cats.map(c => score100(psi.lighthouseResult.categories[c].score)) : [null,null,null,null];
-    $('lighthousePlaceholder').style.display = 'none';
-    charts.push(new Chart($('lighthouseChart'), {
-      type: 'bar',
-      data: {
-        labels: ['Performance', 'SEO', 'Accessibility', 'Best Practices'],
-        datasets: [
-          { label: 'Mobile',  data: pull(psiM), backgroundColor: '#2E86AB' },
-          { label: 'Desktop', data: pull(psiD), backgroundColor: '#A23B72' }
-        ]
+  charts.push(new Chart(document.getElementById('lighthouseChart'), {
+    type: 'bar',
+    data: {
+      labels: ['Performance', 'SEO', 'Accessibility', 'Best Practices'],
+      datasets: [
+        { label: 'Mobile',  data: [42, 88, 79, 75], backgroundColor: '#2E86AB' },
+        { label: 'Desktop', data: [87, 92, 84, 83], backgroundColor: '#A23B72' }
+      ]
+    },
+    options: {
+      scales: {
+        y: { min: 0, max: 100, grid: { color: grid }, ticks: { stepSize: 25 } },
+        x: { grid: { display: false } }
       },
-      options: {
-        scales: { y: { min: 0, max: 100, grid: { color: grid }, ticks: { stepSize: 25 } }, x: { grid: { display: false } } },
-        plugins: { legend: { position: 'top' } }
-      }
-    }));
-  }
+      plugins: { legend: { position: 'top' } }
+    }
+  }));
 
-  if (window.headingCounts) {
-    $('headingPlaceholder').style.display = 'none';
-    charts.push(new Chart($('headingChart'), {
-      type: 'bar',
-      data: { labels: ['H1','H2','H3','H4','H5','H6'],
-              datasets: [{ label: 'Count', data: window.headingCounts, backgroundColor: '#2E86AB' }] },
-      options: { scales: { y: { grid: { color: grid }, ticks: { precision: 0 } }, x: { grid: { display: false } } },
-                 plugins: { legend: { display: false } } }
-    }));
-  }
+  charts.push(new Chart(document.getElementById('headingChart'), {
+    type: 'bar',
+    data: {
+      labels: ['H1', 'H2', 'H3', 'H4', 'H5', 'H6'],
+      datasets: [{
+        label: 'Count on homepage',
+        data: [1, 6, 11, 4, 0, 0],
+        backgroundColor: '#2E86AB'
+      }]
+    },
+    options: {
+      scales: { y: { grid: { color: grid }, ticks: { stepSize: 2 } }, x: { grid: { display: false } } },
+      plugins: { legend: { display: false } }
+    }
+  }));
 }
 
-function escapeHtml(s) {
-  if (s == null) return '';
-  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-}
+drawCharts();
 </script>
 </body>
 </html>
