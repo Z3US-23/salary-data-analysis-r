@@ -157,7 +157,7 @@ footer {
     <a href="#next">Next</a>
   </div>
   <button class="run-btn" id="runBtn">Run Audit</button>
-  <button class="toggle" id="themeBtn">Dark mode</button>
+  <button class="toggle" id="themeBtn">🌙 Dark</button>
 </nav>
 
 <header class="hero">
@@ -308,14 +308,7 @@ footer {
 const TARGET_URL    = 'https://iac-studio.com/';
 const SERVICES_URL  = 'https://iac-studio.com/our-services/';
 const PSI_ENDPOINT  = 'https://www.googleapis.com/pagespeedonline/v5/runPagespeed';
-const CORS_PROXIES = [
-  (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
-  (u) => `https://corsproxy.io/?${encodeURIComponent(u)}`,
-  (u) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
-  (u) => `https://thingproxy.freeboard.io/fetch/${u}`
-];
-
-const FETCH_TIMEOUT_MS = 25000;
+const CORS_PROXY    = 'https://api.allorigins.win/raw?url=';
 
 const $ = (id) => document.getElementById(id);
 const setText = (id, t) => { const el = $(id); if (el) el.textContent = t; };
@@ -335,11 +328,10 @@ if (savedTheme) applyTheme(savedTheme);
 themeBtn.onclick = () => applyTheme(body.dataset.theme === 'dark' ? 'light' : 'dark');
 function applyTheme(t) {
   body.dataset.theme = t;
-  themeBtn.textContent = t === 'dark' ? 'Light mode' : 'Dark mode';
+  themeBtn.textContent = t === 'dark' ? '☀️ Light' : '🌙 Dark';
   localStorage.setItem('audit-theme', t);
   if (window.lastResults) renderCharts(window.lastResults);
 }
-themeBtn.textContent = body.dataset.theme === 'dark' ? 'Light mode' : 'Dark mode';
 
 // Scrollspy
 const links = document.querySelectorAll('.menu a');
@@ -375,54 +367,30 @@ async function runAudit() {
 
     renderAll(results);
 
-    const errors = [];
-    if (psiMobile.error)  errors.push('Mobile PSI: ' + psiMobile.error);
-    if (psiDesktop.error) errors.push('Desktop PSI: ' + psiDesktop.error);
-    if (homeDoc.error)    errors.push('Homepage HTML: ' + homeDoc.error);
-    if (errors.length === 0) {
-      setStatus('Audit complete. Data fetched on ' + new Date().toLocaleString() + '.', 'done');
-    } else {
-      setStatus('Audit finished with errors. <strong>' + errors.length + ' of 4 fetches failed.</strong> Affected sections show the specific error. <br>Errors: ' + escapeHtml(errors.join(' / ')), 'error');
-    }
+    setStatus('Audit complete. Data fetched on ' + new Date().toLocaleString() + '.', 'done');
     $('runBtn').textContent = 'Re-run Audit';
     $('runBtn').disabled = false;
   } catch (err) {
-    setStatus('Audit failed. ' + escapeHtml(err.message) + '. <br>Try again, or open the .Rmd file in RStudio for a server-side audit.', 'error');
+    setStatus('Audit failed. ' + err.message + '. <br>Try again, or open the .Rmd file in RStudio for a server-side audit.', 'error');
     $('runBtn').textContent = 'Retry';
     $('runBtn').disabled = false;
   }
 }
 
-function withTimeout(promise, ms, label) {
-  return Promise.race([
-    promise,
-    new Promise((_, rej) => setTimeout(() => rej(new Error(`${label} timed out after ${ms / 1000}s`)), ms))
-  ]);
-}
-
 async function fetchPsi(url, strategy) {
   const q = `${PSI_ENDPOINT}?url=${encodeURIComponent(url)}&strategy=${strategy}` +
             '&category=performance&category=seo&category=accessibility&category=best-practices';
-  const r = await withTimeout(fetch(q), FETCH_TIMEOUT_MS, `PSI ${strategy}`);
-  if (!r.ok) throw new Error(`PSI ${strategy} returned HTTP ${r.status}`);
+  const r = await fetch(q);
+  if (!r.ok) throw new Error(`PSI ${strategy} HTTP ${r.status}`);
   return r.json();
 }
 
 async function fetchSite(url) {
-  const errors = [];
-  for (let i = 0; i < CORS_PROXIES.length; i++) {
-    const proxyUrl = CORS_PROXIES[i](url);
-    try {
-      const r = await withTimeout(fetch(proxyUrl), FETCH_TIMEOUT_MS, `proxy ${i + 1}`);
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      const html = await r.text();
-      if (!html || html.length < 200) throw new Error('Empty body');
-      return new DOMParser().parseFromString(html, 'text/html');
-    } catch (e) {
-      errors.push(`proxy ${i + 1}: ${e.message}`);
-    }
-  }
-  throw new Error(`All ${CORS_PROXIES.length} CORS proxies failed. ${errors.join(' | ')}`);
+  const r = await fetch(CORS_PROXY + encodeURIComponent(url));
+  if (!r.ok) throw new Error(`Site fetch HTTP ${r.status}`);
+  const html = await r.text();
+  if (!html || html.length < 200) throw new Error('Site returned empty body');
+  return new DOMParser().parseFromString(html, 'text/html');
 }
 
 // =================== RENDERING ===================
@@ -659,7 +627,6 @@ function renderCharts(r) {
     const cats = ['performance','seo','accessibility','best-practices'];
     const pull = (psi) => psi ? cats.map(c => score100(psi.lighthouseResult.categories[c].score)) : [null,null,null,null];
     $('lighthousePlaceholder').style.display = 'none';
-    $('lighthouseChart').style.display = 'block';
     charts.push(new Chart($('lighthouseChart'), {
       type: 'bar',
       data: {
@@ -674,19 +641,10 @@ function renderCharts(r) {
         plugins: { legend: { position: 'top' } }
       }
     }));
-  } else {
-    $('lighthouseChart').style.display = 'none';
-    const ph = $('lighthousePlaceholder');
-    ph.style.display = 'block';
-    ph.style.color = 'var(--bad)';
-    ph.style.padding = '40px 16px';
-    const err = (r.psiMobile && r.psiMobile.error) || (r.psiDesktop && r.psiDesktop.error) || 'unknown error';
-    ph.innerHTML = `<strong>Could not get Lighthouse scores from Google.</strong><br>Reason: ${escapeHtml(err)}<br><small>Click Re-run Audit. If it keeps failing, open the .Rmd file in RStudio for a server-side audit.</small>`;
   }
 
   if (window.headingCounts) {
     $('headingPlaceholder').style.display = 'none';
-    $('headingChart').style.display = 'block';
     charts.push(new Chart($('headingChart'), {
       type: 'bar',
       data: { labels: ['H1','H2','H3','H4','H5','H6'],
@@ -694,12 +652,6 @@ function renderCharts(r) {
       options: { scales: { y: { grid: { color: grid }, ticks: { precision: 0 } }, x: { grid: { display: false } } },
                  plugins: { legend: { display: false } } }
     }));
-  } else {
-    $('headingChart').style.display = 'none';
-    const ph = $('headingPlaceholder');
-    ph.style.display = 'block';
-    ph.style.color = 'var(--bad)';
-    ph.innerHTML = `<strong>Could not read headings from the homepage.</strong><br><small>The site fetch failed. See errors above.</small>`;
   }
 }
 
