@@ -175,6 +175,17 @@ footer {
   font-size: 0.85rem;
 }
 
+@media print {
+  body { background: white !important; color: black !important; }
+  .nav, .toggle { display: none !important; }
+  .card { box-shadow: none !important; border: 1px solid #ccc !important; break-inside: avoid; }
+  .section { break-inside: avoid; }
+  .chart { height: 280px !important; }
+  .hero { padding-top: 20px; }
+  a { color: black !important; text-decoration: none; }
+  .badge { border: 1px solid currentColor; }
+}
+
 @media (max-width: 600px) {
   .heatmap { grid-template-columns: 1fr; }
   .heatmap .cell.head:not(:first-child) { display: none; }
